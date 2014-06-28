@@ -8,7 +8,7 @@ To compile the plugin, run:
     mvn package
 
 To install the plugin, unpack the resulting tarball in the dCache
-plugin directory (`usually /usr/local/share/dcache/plugins`).
+plugin directory (usually `/usr/local/share/dcache/plugins`).
 
 
 To use, define a nearline storage in the dCache admin interface:
