@@ -59,7 +59,7 @@ public class PollingEnditNearlineStorage extends ListeningNearlineStorage
                                      public ListenableFuture<Set<URI>> apply(Void ignored) throws Exception
                                      {
                                          task.start();
-                                         return new TaskFuture<>(task, POLL_PERIOD, TimeUnit.MILLISECONDS);
+                                         return new TaskFuture<>(task);
                                      }
                                  }, executor);
     }
@@ -84,7 +84,7 @@ public class PollingEnditNearlineStorage extends ListeningNearlineStorage
                     public ListenableFuture<Set<Checksum>> apply(Void ignored) throws Exception
                     {
                         task.start();
-                        return new TaskFuture<>(task, POLL_PERIOD, TimeUnit.MILLISECONDS);
+                        return new TaskFuture<>(task);
                     }
                 }, executor);
     }
@@ -122,17 +122,13 @@ public class PollingEnditNearlineStorage extends ListeningNearlineStorage
      */
     private class TaskFuture<V> extends AbstractFuture<V> implements Runnable
     {
-        private final long period;
-        private final TimeUnit unit;
         private final PollingTask<V> task;
         private ListenableScheduledFuture<?> future;
 
-        TaskFuture(PollingTask<V> task, long period, TimeUnit unit)
+        TaskFuture(PollingTask<V> task)
         {
             this.task = task;
-            this.period = period;
-            this.unit = unit;
-            future = executor.schedule(this, this.period, this.unit);
+            future = executor.schedule(this, POLL_PERIOD, TimeUnit.MILLISECONDS);
         }
 
         @Override
@@ -144,7 +140,7 @@ public class PollingEnditNearlineStorage extends ListeningNearlineStorage
                     if (result != null) {
                         set(result);
                     } else {
-                        future = executor.schedule(this, period, unit);
+                        future = executor.schedule(this, POLL_PERIOD, TimeUnit.MILLISECONDS);
                     }
                 }
             } catch (Exception e) {
