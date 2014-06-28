@@ -78,14 +78,16 @@ class StageTask implements PollingTask<Set<Checksum>>
     public Set<Checksum> poll() throws IOException, InterruptedException, CacheException
     {
         if (Files.exists(errorFile)) {
-            Thread.sleep(ERROR_GRACE_PERIOD);
+            List<String> lines;
             try {
-                throw throwError(Files.readAllLines(errorFile, Charsets.UTF_8));
+                Thread.sleep(ERROR_GRACE_PERIOD);
+                lines = Files.readAllLines(errorFile, Charsets.UTF_8);
             } finally {
                 Files.deleteIfExists(inFile);
                 Files.deleteIfExists(errorFile);
                 Files.deleteIfExists(requestFile);
             }
+            throw throwError(lines);
         }
         if (Files.isRegularFile(inFile) && Files.size(inFile) == size) {
             Files.move(inFile, file, StandardCopyOption.ATOMIC_MOVE);
