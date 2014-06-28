@@ -20,6 +20,6 @@ public class EnditNearlineStorageProvider implements NearlineStorageProvider
     @Override
     public NearlineStorage createNearlineStorage(String type, String name)
     {
-        return new EnditNearlineStorage(type, name);
+        return new PollingEnditNearlineStorage(type, name);
     }
 }
