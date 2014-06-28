@@ -1,0 +1,37 @@
+<assembly>
+    <id>dcache</id>
+    <includeBaseDirectory>true</includeBaseDirectory>
+
+    <dependencySets>
+        <dependencySet>
+            <excludes>
+                <exclude>org.slf4j:slf4j-api:*</exclude>
+                <exclude>com.google.guava:guava:*</exclude>
+                <exclude>org.dcache:dcache-common:*</exclude>
+                <exclude>org.dcache:dcache-core:*</exclude>
+                <exclude>net.java.dev.jna:jna:*</exclude>
+            </excludes>
+            <useProjectArtifact>true</useProjectArtifact>
+            <useTransitiveFiltering>true</useTransitiveFiltering>
+        </dependencySet>
+    </dependencySets>
+
+    <fileSets>
+        <fileSet>
+            <includes>
+                <include>LICENSE*</include>
+            </includes>
+        </fileSet>
+        <fileSet>
+          <directory>src/main/docs</directory>
+          <outputDirectory></outputDirectory>
+        </fileSet>
+        <fileSet>
+          <directory>src/main/defaults</directory>
+          <outputDirectory></outputDirectory>
+          <includes>
+            <include>*.properties</include>
+          </includes>
+        </fileSet>
+    </fileSets>
+</assembly>
