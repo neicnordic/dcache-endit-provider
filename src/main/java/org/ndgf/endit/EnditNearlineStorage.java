@@ -87,7 +87,7 @@ public class EnditNearlineStorage extends ListeningNearlineStorage
                                          task.start();
                                          return new TaskFuture<>(task, POLL_PERIOD, TimeUnit.MILLISECONDS);
                                      }
-                                 });
+                                 }, executor);
     }
 
     @Override
@@ -112,7 +112,7 @@ public class EnditNearlineStorage extends ListeningNearlineStorage
                         task.start();
                         return new TaskFuture<>(task, POLL_PERIOD, TimeUnit.MILLISECONDS);
                     }
-                });
+                }, executor);
     }
 
     @Override
