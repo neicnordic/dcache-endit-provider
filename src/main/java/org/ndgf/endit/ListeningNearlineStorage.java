@@ -7,6 +7,7 @@ import com.google.common.util.concurrent.Uninterruptibles;
 import java.net.URI;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutionException;
@@ -73,7 +74,7 @@ public abstract class ListeningNearlineStorage implements NearlineStorage
                 tasks.remove(request.getId());
                 try {
                     request.completed(Uninterruptibles.getUninterruptibly(future));
-                } catch (ExecutionException e) {
+                } catch (ExecutionException | CancellationException e) {
                     request.failed(e);
                 }
             }
