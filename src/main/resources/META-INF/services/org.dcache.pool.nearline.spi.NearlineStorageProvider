@@ -1,1 +1,3 @@
 org.ndgf.endit.EnditNearlineStorageProvider
+org.ndgf.endit.PollingEnditNearlineStorageProvider
+org.ndgf.endit.WatchingEnditNearlineStorageProvider
