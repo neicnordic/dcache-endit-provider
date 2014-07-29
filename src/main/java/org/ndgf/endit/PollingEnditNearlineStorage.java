@@ -9,10 +9,6 @@ import com.google.common.util.concurrent.ListeningScheduledExecutorService;
 import com.google.common.util.concurrent.MoreExecutors;
 
 import java.net.URI;
-import java.nio.file.FileSystems;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -22,24 +18,15 @@ import org.dcache.pool.nearline.spi.RemoveRequest;
 import org.dcache.pool.nearline.spi.StageRequest;
 import org.dcache.util.Checksum;
 
-import static com.google.common.base.Preconditions.checkArgument;
-
-public class PollingEnditNearlineStorage extends ListeningNearlineStorage
+public class PollingEnditNearlineStorage extends AbstractEnditNearlineStorage
 {
     public static final int POLL_PERIOD = 5000;
 
     protected final ListeningScheduledExecutorService executor = MoreExecutors.listeningDecorator(Executors.newSingleThreadScheduledExecutor());
-    private final String type;
-    private final String name;
-    private Path inDir;
-    private Path outDir;
-    private Path requestDir;
-    private Path trashDir;
 
     public PollingEnditNearlineStorage(String type, String name)
     {
-        this.type = type;
-        this.name = name;
+        super(type, name);
     }
 
     @Override
@@ -87,23 +74,6 @@ public class PollingEnditNearlineStorage extends ListeningNearlineStorage
                         return new TaskFuture<>(task);
                     }
                 }, executor);
-    }
-
-    @Override
-    public void configure(Map<String, String> properties) throws IllegalArgumentException
-    {
-        String path = properties.get("directory");
-        checkArgument(path != null, "conf attribute is required");
-        Path dir = FileSystems.getDefault().getPath(path);
-        checkArgument(Files.isDirectory(dir), dir + " is not a directory.");
-        requestDir = dir.resolve("request");
-        outDir = dir.resolve("out");
-        inDir = dir.resolve("in");
-        trashDir = dir.resolve("trash");
-        checkArgument(Files.isDirectory(requestDir), requestDir + " is not a directory.");
-        checkArgument(Files.isDirectory(outDir), outDir + " is not a directory.");
-        checkArgument(Files.isDirectory(inDir), inDir + " is not a directory.");
-        checkArgument(Files.isDirectory(trashDir), trashDir + " is not a directory.");
     }
 
     @Override

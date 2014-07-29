@@ -34,7 +34,7 @@ public abstract class ListeningNearlineStorage implements NearlineStorage
     }
 
     @Override
-    public void flush(Iterable<FlushRequest> requests)
+    public synchronized void flush(Iterable<FlushRequest> requests)
     {
         for (FlushRequest request : requests) {
             add(request, flush(request));
@@ -42,7 +42,7 @@ public abstract class ListeningNearlineStorage implements NearlineStorage
     }
 
     @Override
-    public void stage(Iterable<StageRequest> requests)
+    public synchronized void stage(Iterable<StageRequest> requests)
     {
         for (StageRequest request : requests) {
             add(request, stage(request));
@@ -50,11 +50,16 @@ public abstract class ListeningNearlineStorage implements NearlineStorage
     }
 
     @Override
-    public void remove(Iterable<RemoveRequest> requests)
+    public synchronized void remove(Iterable<RemoveRequest> requests)
     {
         for (RemoveRequest request : requests) {
             add(request, remove(request));
         }
+    }
+
+    protected boolean hasTasks()
+    {
+        return !tasks.isEmpty();
     }
 
     protected abstract ListenableFuture<Set<URI>> flush(FlushRequest request);

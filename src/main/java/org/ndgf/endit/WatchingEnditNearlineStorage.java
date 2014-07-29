@@ -6,11 +6,12 @@ import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.ListeningExecutorService;
 import com.google.common.util.concurrent.MoreExecutors;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.net.URI;
 import java.nio.file.FileSystems;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardWatchEventKinds;
 import java.nio.file.WatchEvent;
@@ -28,27 +29,20 @@ import org.dcache.pool.nearline.spi.RemoveRequest;
 import org.dcache.pool.nearline.spi.StageRequest;
 import org.dcache.util.Checksum;
 
-import static com.google.common.base.Preconditions.checkArgument;
-
 /**
  * Incomplete variant of the Endit nearline storage using a WatchService.
  */
-public class WatchingEnditNearlineStorage extends ListeningNearlineStorage
+public class WatchingEnditNearlineStorage extends AbstractEnditNearlineStorage
 {
+    private final static Logger LOGGER = LoggerFactory.getLogger(WatchingEnditNearlineStorage.class);
+
     private final ConcurrentMap<Path,TaskFuture<?>> tasks = new ConcurrentHashMap<>();
     private final ListeningExecutorService executor = MoreExecutors.listeningDecorator(Executors.newCachedThreadPool());
-    private final String type;
-    private final String name;
-    private Path inDir;
-    private Path outDir;
-    private Path requestDir;
-    private Path trashDir;
     private Future<?> watchTask;
 
     public WatchingEnditNearlineStorage(String type, String name)
     {
-        this.type = type;
-        this.name = name;
+        super(type, name);
     }
 
     @Override
@@ -101,25 +95,16 @@ public class WatchingEnditNearlineStorage extends ListeningNearlineStorage
     }
 
     @Override
-    public void configure(Map<String, String> properties) throws IllegalArgumentException
+    public synchronized void configure(Map<String, String> properties) throws IllegalArgumentException
     {
-        String path = properties.get("directory");
-        checkArgument(path != null, "conf attribute is required");
-        Path dir = FileSystems.getDefault().getPath(path);
-        checkArgument(Files.isDirectory(dir), dir + " is not a directory.");
-        requestDir = dir.resolve("request");
-        outDir = dir.resolve("out");
-        inDir = dir.resolve("in");
-        trashDir = dir.resolve("trash");
-        checkArgument(Files.isDirectory(requestDir), requestDir + " is not a directory.");
-        checkArgument(Files.isDirectory(outDir), outDir + " is not a directory.");
-        checkArgument(Files.isDirectory(inDir), inDir + " is not a directory.");
-        checkArgument(Files.isDirectory(trashDir), trashDir + " is not a directory.");
-
-        // TODO: If the WatchTask is already running we would have to restart it
+        super.configure(properties);
+        if (watchTask != null) {
+            watchTask.cancel(true);
+            watchTask = executor.submit(new WatchTask());
+        }
     }
 
-    public synchronized void start()
+    private synchronized void start()
     {
         if (watchTask == null) {
             watchTask = executor.submit(new WatchTask());
@@ -164,7 +149,7 @@ public class WatchingEnditNearlineStorage extends ListeningNearlineStorage
                 }
             } catch (InterruptedException ignored) {
             } catch (IOException e) {
-                // TODO
+                LOGGER.warn("I/O error while watching Endit directories: {}", e.toString());
             } finally {
                 for (TaskFuture<?> task : tasks.values()) {
                     task.cancel(true);
