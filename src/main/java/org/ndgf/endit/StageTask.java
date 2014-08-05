@@ -68,10 +68,15 @@ class StageTask implements PollingTask<Set<Checksum>>
     }
 
     @Override
-    public void start() throws Exception
+    public Set<Checksum> start() throws Exception
     {
+        if (Files.isRegularFile(inFile) && Files.size(inFile) == size) {
+            Files.move(inFile, file, StandardCopyOption.ATOMIC_MOVE);
+            return Collections.emptySet();
+        }
         String s = PID + " " + System.currentTimeMillis() / 1000;
         Files.write(requestFile, s.getBytes(Charsets.UTF_8));
+        return null;
     }
 
     @Override

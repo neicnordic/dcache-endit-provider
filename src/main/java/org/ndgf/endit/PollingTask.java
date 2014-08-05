@@ -32,7 +32,7 @@ interface PollingTask<T>
     List<Path> getFilesToWatch();
 
     /** Called to initiate the task. */
-    void start() throws Exception;
+    T start() throws Exception;
 
     /**
      * Called when any of the files to watch have an event occur on them.

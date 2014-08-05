@@ -57,12 +57,13 @@ class FlushTask implements PollingTask<Set<URI>>
     }
 
     @Override
-    public void start() throws IOException
+    public Set<URI> start() throws IOException
     {
         try {
             Files.createLink(outFile, file.toPath());
         } catch (FileAlreadyExistsException ignored) {
         }
+        return null;
     }
 
     @Override
