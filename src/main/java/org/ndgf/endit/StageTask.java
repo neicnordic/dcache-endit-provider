@@ -22,7 +22,6 @@ import com.google.common.base.Joiner;
 import com.google.common.collect.Iterables;
 import com.sun.jna.Library;
 import com.sun.jna.Native;
-import diskCacheV111.util.CacheException;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -80,7 +79,7 @@ class StageTask implements PollingTask<Set<Checksum>>
     }
 
     @Override
-    public Set<Checksum> poll() throws IOException, InterruptedException, CacheException
+    public Set<Checksum> poll() throws IOException, InterruptedException, EnditException
     {
         if (Files.exists(errorFile)) {
             List<String> lines;
@@ -102,23 +101,23 @@ class StageTask implements PollingTask<Set<Checksum>>
         return null;
     }
 
-    private CacheException throwError(List<String> lines) throws CacheException
+    private EnditException throwError(List<String> lines) throws EnditException
     {
         String error;
         int errorCode;
         if (lines.isEmpty()) {
-            errorCode = CacheException.DEFAULT_ERROR_CODE;
+            errorCode = 1;
             error = "Endit reported a stage failure without providing a reason.";
         } else {
             try {
                 errorCode = Integer.parseInt(lines.get(0));
                 error = Joiner.on("\n").join(Iterables.skip(lines, 1));
             } catch (NumberFormatException e) {
-                errorCode = CacheException.DEFAULT_ERROR_CODE;
+                errorCode = 1;
                 error = Joiner.on("\n").join(lines);
             }
         }
-        throw new CacheException(errorCode, error);
+        throw new EnditException(errorCode, error);
     }
 
     @Override

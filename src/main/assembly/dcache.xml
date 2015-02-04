@@ -7,8 +7,7 @@
             <excludes>
                 <exclude>org.slf4j:slf4j-api:*</exclude>
                 <exclude>com.google.guava:guava:*</exclude>
-                <exclude>org.dcache:dcache-common:*</exclude>
-                <exclude>org.dcache:dcache-core:*</exclude>
+                <exclude>org.dcache:dcache-nearline-spi:*</exclude>
                 <exclude>net.java.dev.jna:jna:*</exclude>
             </excludes>
             <useProjectArtifact>true</useProjectArtifact>

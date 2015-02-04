@@ -80,7 +80,12 @@ public abstract class ListeningNearlineStorage implements NearlineStorage
                 try {
                     request.completed(Uninterruptibles.getUninterruptibly(future));
                 } catch (ExecutionException | CancellationException e) {
-                    request.failed(e);
+                    if (e.getCause() instanceof EnditException) {
+                        EnditException cause = (EnditException) e.getCause();
+                        request.failed(cause.getReturnCode(), cause.getMessage());
+                    } else {
+                        request.failed(e);
+                    }
                 }
             }
         }, MoreExecutors.sameThreadExecutor());
