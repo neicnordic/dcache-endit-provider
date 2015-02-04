@@ -1,7 +1,7 @@
 dCache Endit Provider
 ==============================================
 
-This dCache plugin interfaces with the Endit TSM integration system.
+This [dCache] plugin interfaces with the [Endit] TSM integration system.
 
 To compile the plugin, run:
 
@@ -17,3 +17,6 @@ To use, define a nearline storage in the dCache admin interface:
 
 The endit directory must be on the same file system as the pool's
 data directory.
+
+[dCache]: http://www.dcache.org/
+[Endit]: https://github.com/maswan/endit
