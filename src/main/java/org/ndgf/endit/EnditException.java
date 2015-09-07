@@ -17,9 +17,35 @@
  */
 package org.ndgf.endit;
 
+import com.google.common.base.Joiner;
+import com.google.common.collect.Iterables;
+
+import java.util.List;
+
 public class EnditException extends Exception
 {
+    private static final long serialVersionUID = -8875114957535690454L;
+
     private final int rc;
+
+    public static EnditException create(List<String> lines)
+    {
+        String error;
+        int errorCode;
+        if (lines.isEmpty()) {
+            errorCode = 1;
+            error = "Endit reported a stage failure without providing a reason.";
+        } else {
+            try {
+                errorCode = Integer.parseInt(lines.get(0));
+                error = Joiner.on("\n").join(Iterables.skip(lines, 1));
+            } catch (NumberFormatException e) {
+                errorCode = 1;
+                error = Joiner.on("\n").join(lines);
+            }
+        }
+        return new EnditException(errorCode, error);
+    }
 
     public EnditException(int rc, String message)
     {

@@ -18,8 +18,6 @@
 package org.ndgf.endit;
 
 import com.google.common.base.Charsets;
-import com.google.common.base.Joiner;
-import com.google.common.collect.Iterables;
 import com.sun.jna.Library;
 import com.sun.jna.Native;
 
@@ -91,7 +89,7 @@ class StageTask implements PollingTask<Set<Checksum>>
                 Files.deleteIfExists(errorFile);
                 Files.deleteIfExists(requestFile);
             }
-            throw throwError(lines);
+            throw EnditException.create(lines);
         }
         if (Files.isRegularFile(inFile) && Files.size(inFile) == size) {
             Files.deleteIfExists(requestFile);
@@ -99,25 +97,6 @@ class StageTask implements PollingTask<Set<Checksum>>
             return Collections.emptySet();
         }
         return null;
-    }
-
-    private EnditException throwError(List<String> lines) throws EnditException
-    {
-        String error;
-        int errorCode;
-        if (lines.isEmpty()) {
-            errorCode = 1;
-            error = "Endit reported a stage failure without providing a reason.";
-        } else {
-            try {
-                errorCode = Integer.parseInt(lines.get(0));
-                error = Joiner.on("\n").join(Iterables.skip(lines, 1));
-            } catch (NumberFormatException e) {
-                errorCode = 1;
-                error = Joiner.on("\n").join(lines);
-            }
-        }
-        throw new EnditException(errorCode, error);
     }
 
     @Override
