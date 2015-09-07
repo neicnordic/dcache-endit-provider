@@ -21,7 +21,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
 /**
- * Incomplete variant of the Endit nearline storage using a WatchService.
+ * Variant of the Endit nearline storage using a WatchService.
  */
 public class WatchingEnditNearlineStorage extends AbstractEnditNearlineStorage
 {
