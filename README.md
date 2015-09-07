@@ -10,6 +10,7 @@ To compile the plugin, run:
 To install the plugin, unpack the resulting tarball in the dCache
 plugin directory (usually `/usr/local/share/dcache/plugins`).
 
+## Configuration
 
 To use, define a nearline storage in the dCache admin interface:
 
@@ -20,8 +21,11 @@ data directory.
 
 The above will create a provider that uses the JVMs file event
 notification feature which in most cases maps directly to a native
-file event notification facility of the operating system. To instead
-use a provider that polls for changes, use:
+file event notification facility of the operating system. 
+
+## Polling provider
+
+To use a provider that polls for changes, use:
 
     hsm create osm osm endit-polling -directory=/path/to/endit/directory
 
