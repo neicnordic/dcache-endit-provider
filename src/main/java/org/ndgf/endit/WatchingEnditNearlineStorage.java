@@ -150,7 +150,7 @@ public class WatchingEnditNearlineStorage extends AbstractEnditNearlineStorage
         {
             for (Path path : task.getFilesToWatch()) {
                 if (tasks.putIfAbsent(path, this) != null) {
-                    // TODO panic
+                    setException(new IllegalStateException("Duplicate nearline requests on " + path));
                 }
             }
         }
