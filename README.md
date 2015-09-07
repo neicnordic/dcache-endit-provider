@@ -36,7 +36,7 @@ values:
     -period=5000
 
 The first is the number of threads used for polling for file changes
-and the second being the poll period in milliseconds.
+and the second is the poll period in milliseconds.
 
 [dCache]: http://www.dcache.org/
 [Endit]: https://github.com/maswan/endit
