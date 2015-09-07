@@ -29,7 +29,7 @@ To use a provider that polls for changes, use:
 
     hsm create osm osm endit-polling -directory=/path/to/endit/directory
 
-This provider accepts two optional options with the following default
+This provider accepts two additional options with the following default
 values:
 
     -threads=1
