@@ -62,8 +62,12 @@ public class WatchingEnditNearlineStorage extends AbstractEnditNearlineStorage
                                      @Override
                                      public ListenableFuture<Set<URI>> apply(Void ignored) throws Exception
                                      {
-                                         task.start();
-                                         return new TaskFuture<>(task);
+                                         Set<URI> uris = task.start();
+                                         if (uris != null) {
+                                             return Futures.immediateFuture(uris);
+                                         } else {
+                                             return new TaskFuture<>(task);
+                                         }
                                      }
                                  }, executor);
     }
@@ -88,8 +92,12 @@ public class WatchingEnditNearlineStorage extends AbstractEnditNearlineStorage
                     @Override
                     public ListenableFuture<Set<Checksum>> apply(Void ignored) throws Exception
                     {
-                        task.start();
-                        return new TaskFuture<>(task);
+                        Set<Checksum> checksums = task.start();
+                        if (checksums != null) {
+                            return Futures.immediateFuture(checksums);
+                        } else {
+                            return new TaskFuture<>(task);
+                        }
                     }
                 }, executor);
     }
