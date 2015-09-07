@@ -1,6 +1,6 @@
-/* dCache - http://www.dcache.org/
+/* dCache Endit Nearline Storage Provider
  *
- * Copyright (C) 2014 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2014-2015 Gerd Behrmann
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
