@@ -24,18 +24,36 @@ import com.google.common.util.concurrent.ListeningExecutorService;
 import com.google.common.util.concurrent.ListeningScheduledExecutorService;
 import com.google.common.util.concurrent.MoreExecutors;
 
+import java.util.Map;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 public class PollingEnditNearlineStorage extends AbstractEnditNearlineStorage
 {
-    public static final int POLL_PERIOD = 5000;
+    protected int period;
 
-    protected final ListeningScheduledExecutorService executor = MoreExecutors.listeningDecorator(Executors.newSingleThreadScheduledExecutor());
+    protected ListeningScheduledExecutorService executor;
 
     public PollingEnditNearlineStorage(String type, String name)
     {
         super(type, name);
+    }
+
+    @Override
+    public synchronized void configure(Map<String, String> properties) throws IllegalArgumentException
+    {
+        int threads = Integer.parseInt(properties.getOrDefault("threads", "1"));
+        int period = Integer.parseInt(properties.getOrDefault("period", "5000"));
+
+        super.configure(properties);
+
+        this.period = period;
+
+        if (executor != null) {
+            executor.shutdown();
+        }
+        executor = MoreExecutors.listeningDecorator(Executors.newScheduledThreadPool(threads));
+
     }
 
     @Override
@@ -72,7 +90,7 @@ public class PollingEnditNearlineStorage extends AbstractEnditNearlineStorage
         TaskFuture(PollingTask<V> task)
         {
             this.task = task;
-            future = executor.schedule(this, POLL_PERIOD, TimeUnit.MILLISECONDS);
+            future = executor.schedule(this, period, TimeUnit.MILLISECONDS);
         }
 
         @Override
@@ -84,7 +102,7 @@ public class PollingEnditNearlineStorage extends AbstractEnditNearlineStorage
                     if (result != null) {
                         set(result);
                     } else {
-                        future = executor.schedule(this, POLL_PERIOD, TimeUnit.MILLISECONDS);
+                        future = executor.schedule(this, period, TimeUnit.MILLISECONDS);
                     }
                 }
             } catch (Exception e) {
