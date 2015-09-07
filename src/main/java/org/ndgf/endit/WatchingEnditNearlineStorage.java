@@ -1,8 +1,6 @@
 package org.ndgf.endit;
 
 import com.google.common.util.concurrent.AbstractFuture;
-import com.google.common.util.concurrent.AsyncFunction;
-import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.ListeningExecutorService;
 import com.google.common.util.concurrent.MoreExecutors;
@@ -10,7 +8,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.net.URI;
 import java.nio.file.FileSystems;
 import java.nio.file.Path;
 import java.nio.file.StandardWatchEventKinds;
@@ -18,16 +15,10 @@ import java.nio.file.WatchEvent;
 import java.nio.file.WatchKey;
 import java.nio.file.WatchService;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-
-import org.dcache.pool.nearline.spi.FlushRequest;
-import org.dcache.pool.nearline.spi.RemoveRequest;
-import org.dcache.pool.nearline.spi.StageRequest;
-import org.dcache.util.Checksum;
 
 /**
  * Incomplete variant of the Endit nearline storage using a WatchService.
@@ -46,63 +37,6 @@ public class WatchingEnditNearlineStorage extends AbstractEnditNearlineStorage
     }
 
     @Override
-    public ListenableFuture<Void> remove(final RemoveRequest request)
-    {
-        return executor.submit(new RemoveTask(request, trashDir));
-    }
-
-    @Override
-    protected ListenableFuture<Set<URI>> flush(FlushRequest request)
-    {
-        start();
-        final PollingTask<Set<URI>> task = new FlushTask(request, outDir, type, name);
-        return Futures.transform(request.activate(),
-                                 new AsyncFunction<Void, Set<URI>>()
-                                 {
-                                     @Override
-                                     public ListenableFuture<Set<URI>> apply(Void ignored) throws Exception
-                                     {
-                                         Set<URI> uris = task.start();
-                                         if (uris != null) {
-                                             return Futures.immediateFuture(uris);
-                                         } else {
-                                             return new TaskFuture<>(task);
-                                         }
-                                     }
-                                 }, executor);
-    }
-
-    @Override
-    protected ListenableFuture<Set<Checksum>> stage(final StageRequest request)
-    {
-        start();
-        final PollingTask<Set<Checksum>> task = new StageTask(request, requestDir, inDir);
-        return Futures.transform(
-                Futures.transform(request.activate(),
-                                  new AsyncFunction<Void, Void>()
-                                  {
-                                      @Override
-                                      public ListenableFuture<Void> apply(Void ignored) throws Exception
-                                      {
-                                          return request.allocate();
-                                      }
-                                  }),
-                new AsyncFunction<Void, Set<Checksum>>()
-                {
-                    @Override
-                    public ListenableFuture<Set<Checksum>> apply(Void ignored) throws Exception
-                    {
-                        Set<Checksum> checksums = task.start();
-                        if (checksums != null) {
-                            return Futures.immediateFuture(checksums);
-                        } else {
-                            return new TaskFuture<>(task);
-                        }
-                    }
-                }, executor);
-    }
-
-    @Override
     public synchronized void configure(Map<String, String> properties) throws IllegalArgumentException
     {
         super.configure(properties);
@@ -110,6 +44,19 @@ public class WatchingEnditNearlineStorage extends AbstractEnditNearlineStorage
             watchTask.cancel(true);
             watchTask = executor.submit(new WatchTask());
         }
+    }
+
+    @Override
+    protected ListeningExecutorService executor()
+    {
+        return executor;
+    }
+
+    @Override
+    protected <T> ListenableFuture<T> schedule(PollingTask<T> task)
+    {
+        start();
+        return new TaskFuture<>(task);
     }
 
     private synchronized void start()

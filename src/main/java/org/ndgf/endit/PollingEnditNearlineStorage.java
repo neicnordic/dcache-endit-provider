@@ -1,22 +1,14 @@
 package org.ndgf.endit;
 
 import com.google.common.util.concurrent.AbstractFuture;
-import com.google.common.util.concurrent.AsyncFunction;
-import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.ListenableScheduledFuture;
+import com.google.common.util.concurrent.ListeningExecutorService;
 import com.google.common.util.concurrent.ListeningScheduledExecutorService;
 import com.google.common.util.concurrent.MoreExecutors;
 
-import java.net.URI;
-import java.util.Set;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
-
-import org.dcache.pool.nearline.spi.FlushRequest;
-import org.dcache.pool.nearline.spi.RemoveRequest;
-import org.dcache.pool.nearline.spi.StageRequest;
-import org.dcache.util.Checksum;
 
 public class PollingEnditNearlineStorage extends AbstractEnditNearlineStorage
 {
@@ -30,58 +22,15 @@ public class PollingEnditNearlineStorage extends AbstractEnditNearlineStorage
     }
 
     @Override
-    public ListenableFuture<Void> remove(final RemoveRequest request)
+    protected ListeningExecutorService executor()
     {
-        return executor.submit(new RemoveTask(request, trashDir));
+        return executor;
     }
 
     @Override
-    protected ListenableFuture<Set<URI>> flush(FlushRequest request)
+    protected <T> ListenableFuture<T> schedule(PollingTask<T> task)
     {
-        final PollingTask<Set<URI>> task = new FlushTask(request, outDir, type, name);
-        return Futures.transform(request.activate(),
-                                 new AsyncFunction<Void, Set<URI>>()
-                                 {
-                                     @Override
-                                     public ListenableFuture<Set<URI>> apply(Void ignored) throws Exception
-                                     {
-                                         Set<URI> uris = task.start();
-                                         if (uris != null) {
-                                             return Futures.immediateFuture(uris);
-                                         } else {
-                                             return new TaskFuture<>(task);
-                                         }
-                                     }
-                                 }, executor);
-    }
-
-    @Override
-    protected ListenableFuture<Set<Checksum>> stage(final StageRequest request)
-    {
-        final PollingTask<Set<Checksum>> task = new StageTask(request, requestDir, inDir);
-        return Futures.transform(
-                Futures.transform(request.activate(),
-                                  new AsyncFunction<Void, Void>()
-                                  {
-                                      @Override
-                                      public ListenableFuture<Void> apply(Void ignored) throws Exception
-                                      {
-                                          return request.allocate();
-                                      }
-                                  }),
-                new AsyncFunction<Void, Set<Checksum>>()
-                {
-                    @Override
-                    public ListenableFuture<Set<Checksum>> apply(Void ignored) throws Exception
-                    {
-                        Set<Checksum> checksums = task.start();
-                        if (checksums != null) {
-                            return Futures.immediateFuture(checksums);
-                        } else {
-                            return new TaskFuture<>(task);
-                        }
-                    }
-                }, executor);
+        return new TaskFuture<>(task);
     }
 
     @Override
