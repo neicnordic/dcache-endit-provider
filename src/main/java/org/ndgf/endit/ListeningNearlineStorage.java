@@ -105,6 +105,6 @@ public abstract class ListeningNearlineStorage implements NearlineStorage
                     }
                 }
             }
-        }, MoreExecutors.sameThreadExecutor());
+        }, MoreExecutors.directExecutor());
     }
 }
