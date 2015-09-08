@@ -71,7 +71,8 @@ class StageTask implements PollingTask<Set<Checksum>>
             Files.move(inFile, file, StandardCopyOption.ATOMIC_MOVE);
             return Collections.emptySet();
         }
-        String s = PID + " " + System.currentTimeMillis() / 1000;
+        String s = String.format("{ \"file_size\": %d, \"parent_pid\": %d, \"time\": %d }",
+                                 size, PID, System.currentTimeMillis() / 1000);
         Files.write(requestFile, s.getBytes(Charsets.UTF_8));
         return null;
     }
