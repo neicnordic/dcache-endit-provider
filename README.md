@@ -14,7 +14,7 @@ plugin directory (usually `/usr/local/share/dcache/plugins`).
 
 To use, define a nearline storage in the dCache admin interface:
 
-    hsm create osm osm endit -directory=/path/to/endit/directory
+    hsm create osm the-hsm-name endit -directory=/path/to/endit/directory
 
 The endit directory must be on the same file system as the pool's
 data directory.
@@ -27,7 +27,7 @@ file event notification facility of the operating system.
 
 To use a provider that polls for changes, use:
 
-    hsm create osm osm endit-polling -directory=/path/to/endit/directory
+    hsm create osm osm the-hsm-name -directory=/path/to/endit/directory
 
 This provider accepts two additional options with the following default
 values:
