@@ -2,6 +2,8 @@
  *
  * Copyright (C) 2014-2015 Gerd Behrmann
  *
+ * Modifications Copyright (C) 2018 Vincent Garonne
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
  * published by the Free Software Foundation, either version 3 of the
@@ -29,6 +31,9 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import org.dcache.pool.nearline.spi.StageRequest;
 import org.dcache.util.Checksum;
 import org.dcache.vehicles.FileAttributes;
@@ -39,8 +44,12 @@ class StageTask implements PollingTask<Set<Checksum>>
 {
     public static final int ERROR_GRACE_PERIOD = 1000;
 
+    public static final int GRACE_PERIOD = 1000;
+
     private static final int PID = CLibrary.INSTANCE.getpid();
 
+    private final static Logger LOGGER = LoggerFactory.getLogger(StageTask.class);
+    
     private final Path file;
     private final Path inFile;
     private final Path errorFile;
@@ -92,8 +101,9 @@ class StageTask implements PollingTask<Set<Checksum>>
             }
             throw EnditException.create(lines);
         }
-        if (Files.isRegularFile(inFile) && Files.size(inFile) == size) {
-            Files.deleteIfExists(requestFile);
+        if (Files.isRegularFile(inFile) && Files.size(inFile) == size) {            
+            Files.deleteIfExists(requestFile);            
+            Thread.sleep(GRACE_PERIOD);            
             Files.move(inFile, file, StandardCopyOption.ATOMIC_MOVE);
             return Collections.emptySet();
         }
