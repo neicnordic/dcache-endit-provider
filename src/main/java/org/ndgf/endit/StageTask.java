@@ -103,8 +103,12 @@ class StageTask implements PollingTask<Set<Checksum>>
         }
         if (Files.isRegularFile(inFile) && Files.size(inFile) == size) {            
             Files.deleteIfExists(requestFile);            
-            Thread.sleep(GRACE_PERIOD);            
-            Files.move(inFile, file, StandardCopyOption.ATOMIC_MOVE);
+            Thread.sleep(GRACE_PERIOD); 
+            try {
+                Files.move(inFile, file, StandardCopyOption.ATOMIC_MOVE);
+            } catch (IOException e) {
+                System.err.println(e);
+            }
             return Collections.emptySet();
         }
         return null;

@@ -112,7 +112,7 @@ public abstract class AbstractEnditNearlineStorage extends ListeningNearlineStor
     protected ListenableFuture<Set<URI>> flush(FlushRequest request)
     {
         final PollingTask<Set<URI>> task = new FlushTask(request, outDir, type, name);
-        return Futures.transform(request.activate(),
+        return Futures.transformAsync(request.activate(),
                                  new AsyncFunction<Void, Set<URI>>()
                                  {
                                      @Override
@@ -132,8 +132,8 @@ public abstract class AbstractEnditNearlineStorage extends ListeningNearlineStor
     protected ListenableFuture<Set<Checksum>> stage(final StageRequest request)
     {
         final PollingTask<Set<Checksum>> task = new StageTask(request, requestDir, inDir);
-        return Futures.transform(
-                Futures.transform(request.activate(),
+        return Futures.transformAsync(
+                Futures.transformAsync(request.activate(),
                                   new AsyncFunction<Void, Void>()
                                   {
                                       @Override
