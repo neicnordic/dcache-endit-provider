@@ -4,7 +4,7 @@
 
     <groupId>org.ndgf</groupId>
     <artifactId>dcache-endit-provider</artifactId>
-    <version>1.0.3</version>
+    <version>1.0.4</version>
     <packaging>jar</packaging>
 
     <name>dCache Endit provider</name>
@@ -67,6 +67,9 @@
                 <configuration>
                     <source>1.7</source>
                     <target>1.7</target>
+                    <compilerArgs>
+                        <arg>-Xlint:deprecation</arg>
+                    </compilerArgs>
                 </configuration>
             </plugin>
 

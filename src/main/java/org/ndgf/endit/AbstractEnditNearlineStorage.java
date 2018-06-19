@@ -93,7 +93,8 @@ public abstract class AbstractEnditNearlineStorage extends ListeningNearlineStor
                 Files.deleteIfExists(requestFile);
             }
         } catch (IOException e) {
-            Throwables.propagate(e);
+            new RuntimeException(e);
+            // Throwables.propagate(e);
         }
 
         this.requestDir = requestDir;
