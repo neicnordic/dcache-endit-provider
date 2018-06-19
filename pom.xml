@@ -4,7 +4,7 @@
 
     <groupId>org.ndgf</groupId>
     <artifactId>dcache-endit-provider</artifactId>
-    <version>1.0.1</version>
+    <version>1.0.2</version>
     <packaging>jar</packaging>
 
     <name>dCache Endit provider</name>
