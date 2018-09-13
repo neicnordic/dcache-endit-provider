@@ -30,6 +30,9 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import org.dcache.pool.nearline.spi.FlushRequest;
 
 import static java.util.Arrays.asList;
@@ -41,6 +44,8 @@ class FlushTask implements PollingTask<Set<URI>>
     private final PnfsId pnfsId;
     private final String type;
     private final String name;
+
+    private final static Logger LOGGER = LoggerFactory.getLogger(FlushTask.class);
 
     public FlushTask(FlushRequest request, Path outDir, String type, String name)
     {
@@ -70,7 +75,15 @@ class FlushTask implements PollingTask<Set<URI>>
     public Set<URI> poll() throws URISyntaxException
     {
         if (!Files.exists(outFile)) {
-            return Collections.singleton(new URI(type, name, null, "bfid=" + pnfsId.getId(), null));
+           LOGGER.debug("File " + name + " deleted");
+           URI uri = new URI(type, name, null, "bfid=" + pnfsId.toString(), null);
+           // URI format: hsmType://hsmInstance/?store=storename&group=groupname&bfid=bfid  
+           // <hsmType>: The type of the Tertiary Storage System  
+           // <hsmInstance>: The name of the instance  
+           // <storename> and <groupname> : The store and group name of the file as provided by the arguments to this executable.  
+           // <bfid>: The unique identifier needed to restore or remove the file if necessary.   
+           LOGGER.debug("Send back uri: " + uri.toString());
+           return Collections.singleton(uri);
         }
         return null;
     }
