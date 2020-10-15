@@ -39,4 +39,4 @@ The first is the number of threads used for polling for file changes
 and the second is the poll period in milliseconds.
 
 [dCache]: http://www.dcache.org/
-[Endit]: https://github.com/maswan/endit
+[Endit]: https://github.com/neicnordic/endit
