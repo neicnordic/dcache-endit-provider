@@ -55,6 +55,8 @@ class StageTask implements PollingTask<Set<Checksum>>
     private final Path errorFile;
     private final Path requestFile;
     private final long size;
+    private final String storageClass;
+    private final String path;
 
     StageTask(StageRequest request, Path requestDir, Path inDir)
     {
@@ -65,6 +67,10 @@ class StageTask implements PollingTask<Set<Checksum>>
         inFile = inDir.resolve(id);
         errorFile = requestDir.resolve(id + ".err");
         requestFile = requestDir.resolve(id);
+        storageClass = fileAttributes.getStorageClass();
+  	path = request.getFileAttributes().getStorageInfo().getMap().get("path");
+        //path = request.getFileAttributes().getStorageInfo().getKey("path");
+
     }
 
     @Override
@@ -80,8 +86,12 @@ class StageTask implements PollingTask<Set<Checksum>>
             Files.move(inFile, file, StandardCopyOption.ATOMIC_MOVE);
             return Collections.emptySet();
         }
-        String s = String.format("{ \"file_size\": %d, \"parent_pid\": %d, \"time\": %d }",
-                                 size, PID, System.currentTimeMillis() / 1000);
+
+ 	       
+        String s = String.format("{ \"file_size\": %d, \"parent_pid\": %d, \"time\": %d, \"storage_class\": %s, \"action\": %s, \"path\": %s }",
+                                 size, PID, System.currentTimeMillis() / 1000,  "\"" + storageClass + "\"", "\"recall\"", "\"" + path + "\"" );
+
+    
         Files.write(requestFile, s.getBytes(Charsets.UTF_8));
         return null;
     }

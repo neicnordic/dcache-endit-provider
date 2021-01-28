@@ -17,8 +17,7 @@
  */
 package org.ndgf.endit;
 
-import diskCacheV111.util.PnfsId;
-
+import com.google.common.base.Charsets;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
@@ -35,7 +34,12 @@ import org.slf4j.LoggerFactory;
 
 import org.dcache.pool.nearline.spi.FlushRequest;
 
+import diskCacheV111.util.PnfsId;
+
 import static java.util.Arrays.asList;
+
+import org.dcache.util.Checksum;
+
 
 class FlushTask implements PollingTask<Set<URI>>
 {
@@ -44,16 +48,29 @@ class FlushTask implements PollingTask<Set<URI>>
     private final PnfsId pnfsId;
     private final String type;
     private final String name;
-
+    private final Path requestFile;
+    private final long size;
+    private final String storageClass;
+    private final String path;
+    
+    private final Set<Checksum> checksums;
+    
     private final static Logger LOGGER = LoggerFactory.getLogger(FlushTask.class);
 
-    public FlushTask(FlushRequest request, Path outDir, String type, String name)
+    public FlushTask(FlushRequest request, Path requestDir, Path outDir, String type, String name)
     {
         this.type = type;
         this.name = name;
         file = request.getFile();
         outFile = outDir.resolve(file.getName());
         pnfsId = request.getFileAttributes().getPnfsId();
+ 	requestFile = requestDir.resolve(pnfsId.toString());
+  	size = request.getFileAttributes().getSize();       
+        storageClass =request.getFileAttributes().getStorageClass();
+ 	path = request.getFileAttributes().getStorageInfo().getMap().get("path");
+        
+        checksums = request.getFileAttributes().getChecksums();
+        
     }
 
     public List<Path> getFilesToWatch()
@@ -64,6 +81,18 @@ class FlushTask implements PollingTask<Set<URI>>
     @Override
     public Set<URI> start() throws IOException
     {
+        String checksumType="";
+        String checksumValue="";
+
+        for (Checksum checksum: checksums) {
+            checksumType = checksum.getType().getName().toLowerCase();
+            checksumValue = checksum.getValue();           
+        }
+
+        String s = String.format("{ \"file_size\": %d, \"time\": %d, \"storage_class\": %s, \"action\": %s, \"path\": %s, \"checksum_type\":%s, \"checksum_value\":%s }",
+    				size, System.currentTimeMillis() / 1000, "\"" + storageClass + "\"", "\"migrate\"" , "\"" + path + "\"", "\"" + checksumType + "\"", "\"" + checksumValue + "\"");
+    	Files.write(requestFile, s.getBytes(Charsets.UTF_8));
+  
         try {
             Files.createLink(outFile, file.toPath());
         } catch (FileAlreadyExistsException ignored) {
@@ -72,7 +101,7 @@ class FlushTask implements PollingTask<Set<URI>>
     }
 
     @Override
-    public Set<URI> poll() throws URISyntaxException
+    public Set<URI> poll() throws URISyntaxException, IOException
     {
         if (!Files.exists(outFile)) {
            LOGGER.debug("File " + name + " deleted");
@@ -83,7 +112,9 @@ class FlushTask implements PollingTask<Set<URI>>
            // <storename> and <groupname> : The store and group name of the file as provided by the arguments to this executable.  
            // <bfid>: The unique identifier needed to restore or remove the file if necessary.   
            LOGGER.debug("Send back uri: " + uri.toString());
-           return Collections.singleton(uri);
+   	   Files.deleteIfExists(requestFile);
+           
+	   return Collections.singleton(uri);
         }
         return null;
     }
@@ -91,6 +122,10 @@ class FlushTask implements PollingTask<Set<URI>>
     @Override
     public boolean abort() throws IOException
     {
-        return Files.deleteIfExists(outFile);
+        if (Files.deleteIfExists(outFile)) {
+        	Files.deleteIfExists(requestFile);
+            return true;
+        }
+        return false;
     }
 }
