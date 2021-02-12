@@ -44,7 +44,11 @@
         <dependency>
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
+<<<<<<< HEAD
             <version>24.1.1-jre</version>
+=======
+            <version>24.1.1</version>
+>>>>>>> 44a4fac49100530ed50c3ce14396df33576abb3b
         </dependency>
 	<dependency>
             <groupId>commons-io</groupId>
