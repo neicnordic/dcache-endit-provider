@@ -70,13 +70,7 @@ class StageTask implements PollingTask<Set<Checksum>>
         errorFile = requestDir.resolve(id + ".err");
         requestFile = requestDir.resolve(id);
         storageClass = fileAttributes.getStorageClass();
-<<<<<<< HEAD
-  	path = request.getFileAttributes().getStorageInfo().getMap().get("path");
- 
-=======
-  	    path = request.getFileAttributes().getStorageInfo().getMap().get("path");       
-
->>>>>>> 44a4fac49100530ed50c3ce14396df33576abb3b
+  	path = request.getFileAttributes().getStorageInfo().getMap().get("path"); 
     }
 
     @Override
