@@ -98,13 +98,10 @@ class FlushTask implements PollingTask<Set<URI>>
     	jsObj.addProperty("action", "migrate");
     	jsObj.addProperty("path", path);
     	jsObj.addProperty("checksumType", checksumType);
-    	jsObj.addProperty("checksumValue", checksumValue);  	
+    	jsObj.addProperty("checksumValue", checksumValue);     	
     	
-    	if (jsObj.size() != 0 )
-           FileUtils.write(requestFile.toFile(), jsObj.toString(),  StandardCharsets.UTF_8);
-        else
-           System.out.println("Json object is empty");
-  
+        FileUtils.write(requestFile.toFile(), jsObj.toString(),  StandardCharsets.UTF_8);
+         
         try {
             Files.createLink(outFile, file.toPath());
         } catch (FileAlreadyExistsException ignored) {

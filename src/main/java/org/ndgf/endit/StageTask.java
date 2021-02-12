@@ -94,12 +94,9 @@ class StageTask implements PollingTask<Set<Checksum>>
     	jsObj.addProperty("storage_class", storageClass);
     	jsObj.addProperty("action", "recall");
     	jsObj.addProperty("path", path);	
-    	
-	if (jsObj.size() != 0 )	        	
-    	   FileUtils.write(requestFile.toFile(), jsObj.toString(),  StandardCharsets.UTF_8);
- 	else 
-    	   System.out.println("Json object is empty");	
-	
+    	    	
+    	FileUtils.write(requestFile.toFile(), jsObj.toString(),  StandardCharsets.UTF_8);
+ 	
         return null;
     }
 
