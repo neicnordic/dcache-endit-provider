@@ -17,7 +17,7 @@
  */
 package org.ndgf.endit;
 
-import com.google.common.base.Charsets;
+import java.nio.charset.StandardCharsets;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
@@ -40,6 +40,8 @@ import static java.util.Arrays.asList;
 
 import org.dcache.util.Checksum;
 
+import com.google.gson.JsonObject;
+import org.apache.commons.io.FileUtils;
 
 class FlushTask implements PollingTask<Set<URI>>
 {
@@ -67,8 +69,7 @@ class FlushTask implements PollingTask<Set<URI>>
  	requestFile = requestDir.resolve(pnfsId.toString());
   	size = request.getFileAttributes().getSize();       
         storageClass =request.getFileAttributes().getStorageClass();
- 	path = request.getFileAttributes().getStorageInfo().getMap().get("path");
-        
+ 	path = request.getFileAttributes().getStorageInfo().getMap().get("path");        
         checksums = request.getFileAttributes().getChecksums();
         
     }
@@ -89,9 +90,20 @@ class FlushTask implements PollingTask<Set<URI>>
             checksumValue = checksum.getValue();           
         }
 
-        String s = String.format("{ \"file_size\": %d, \"time\": %d, \"storage_class\": %s, \"action\": %s, \"path\": %s, \"checksum_type\":%s, \"checksum_value\":%s }",
-    				size, System.currentTimeMillis() / 1000, "\"" + storageClass + "\"", "\"migrate\"" , "\"" + path + "\"", "\"" + checksumType + "\"", "\"" + checksumValue + "\"");
-    	Files.write(requestFile, s.getBytes(Charsets.UTF_8));
+
+    	JsonObject jsObj = new JsonObject();
+    	jsObj.addProperty("file_size", size);
+    	jsObj.addProperty("time", System.currentTimeMillis() / 1000);
+    	jsObj.addProperty("storage_class", storageClass);
+    	jsObj.addProperty("action", "migrate");
+    	jsObj.addProperty("path", path);
+    	jsObj.addProperty("checksumType", checksumType);
+    	jsObj.addProperty("checksumValue", checksumValue);  	
+    	
+    	if (jsObj.size() != 0 )
+           FileUtils.write(requestFile.toFile(), jsObj.toString(),  StandardCharsets.UTF_8);
+        else
+           System.out.println("Json object is empty");
   
         try {
             Files.createLink(outFile, file.toPath());
@@ -122,10 +134,6 @@ class FlushTask implements PollingTask<Set<URI>>
     @Override
     public boolean abort() throws IOException
     {
-        if (Files.deleteIfExists(outFile)) {
-        	Files.deleteIfExists(requestFile);
-            return true;
-        }
-        return false;
+       return Files.deleteIfExists(outFile) && Files.deleteIfExists(requestFile);
     }
 }
