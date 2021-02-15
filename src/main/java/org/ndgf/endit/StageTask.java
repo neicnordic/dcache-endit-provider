@@ -19,7 +19,7 @@
  */
 package org.ndgf.endit;
 
-import com.google.common.base.Charsets;
+import java.nio.charset.StandardCharsets;
 import com.sun.jna.Library;
 import com.sun.jna.Native;
 
@@ -39,6 +39,8 @@ import org.dcache.util.Checksum;
 import org.dcache.vehicles.FileAttributes;
 
 import static java.util.Arrays.asList;
+import com.google.gson.JsonObject;
+import org.apache.commons.io.FileUtils;
 
 class StageTask implements PollingTask<Set<Checksum>>
 {
@@ -55,6 +57,8 @@ class StageTask implements PollingTask<Set<Checksum>>
     private final Path errorFile;
     private final Path requestFile;
     private final long size;
+    private final String storageClass;
+    private final String path;
 
     StageTask(StageRequest request, Path requestDir, Path inDir)
     {
@@ -65,6 +69,8 @@ class StageTask implements PollingTask<Set<Checksum>>
         inFile = inDir.resolve(id);
         errorFile = requestDir.resolve(id + ".err");
         requestFile = requestDir.resolve(id);
+        storageClass = fileAttributes.getStorageClass();
+  	path = request.getFileAttributes().getStorageInfo().getMap().get("path"); 
     }
 
     @Override
@@ -80,9 +86,17 @@ class StageTask implements PollingTask<Set<Checksum>>
             Files.move(inFile, file, StandardCopyOption.ATOMIC_MOVE);
             return Collections.emptySet();
         }
-        String s = String.format("{ \"file_size\": %d, \"parent_pid\": %d, \"time\": %d }",
-                                 size, PID, System.currentTimeMillis() / 1000);
-        Files.write(requestFile, s.getBytes(Charsets.UTF_8));
+  
+	JsonObject jsObj = new JsonObject();
+    	jsObj.addProperty("file_size", size);
+	jsObj.addProperty("parent_pid", PID);
+    	jsObj.addProperty("time", System.currentTimeMillis() / 1000);
+    	jsObj.addProperty("storage_class", storageClass);
+    	jsObj.addProperty("action", "recall");
+    	jsObj.addProperty("path", path);	
+    	    	
+    	FileUtils.write(requestFile.toFile(), jsObj.toString(),  StandardCharsets.UTF_8);
+ 	
         return null;
     }
 
@@ -93,7 +107,7 @@ class StageTask implements PollingTask<Set<Checksum>>
             List<String> lines;
             try {
                 Thread.sleep(ERROR_GRACE_PERIOD);
-                lines = Files.readAllLines(errorFile, Charsets.UTF_8);
+                lines = Files.readAllLines(errorFile, StandardCharsets.UTF_8);
             } finally {
                 Files.deleteIfExists(inFile);
                 Files.deleteIfExists(errorFile);
@@ -117,12 +131,8 @@ class StageTask implements PollingTask<Set<Checksum>>
     @Override
     public boolean abort() throws Exception
     {
-        if (Files.deleteIfExists(requestFile)) {
-            Files.deleteIfExists(errorFile);
-            Files.deleteIfExists(inFile);
-            return true;
-        }
-        return false;
+       return Files.deleteIfExists(requestFile) && Files.deleteIfExists(errorFile) && Files.deleteIfExists(inFile);
+      
     }
 
     private interface CLibrary extends Library

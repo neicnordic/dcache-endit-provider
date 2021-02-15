@@ -17,9 +17,8 @@
  */
 package org.ndgf.endit;
 
-import com.google.common.base.Charsets;
 import com.google.common.base.Splitter;
-
+import java.nio.charset.StandardCharsets;
 import java.io.IOException;
 import java.net.URI;
 import java.nio.file.Files;
@@ -49,7 +48,7 @@ class RemoveTask implements Callable<Void>
 
         /* Tell Endit to remove it from tape.
          */
-        Files.write(trashDir.resolve(id), uri.toASCIIString().getBytes(Charsets.UTF_8));
+        Files.write(trashDir.resolve(id), uri.toASCIIString().getBytes(StandardCharsets.UTF_8));
         return null;
     }
 
