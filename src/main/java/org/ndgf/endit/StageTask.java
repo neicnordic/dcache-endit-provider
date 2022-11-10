@@ -70,7 +70,7 @@ class StageTask implements PollingTask<Set<Checksum>>
         errorFile = requestDir.resolve(id + ".err");
         requestFile = requestDir.resolve(id);
         storageClass = fileAttributes.getStorageClass();
-  	path = request.getFileAttributes().getStorageInfo().getMap().get("path"); 
+        path = request.getFileAttributes().getStorageInfo().getMap().get("path");
     }
 
     @Override
@@ -87,15 +87,15 @@ class StageTask implements PollingTask<Set<Checksum>>
             return Collections.emptySet();
         }
   
-	JsonObject jsObj = new JsonObject();
-    	jsObj.addProperty("file_size", size);
-	jsObj.addProperty("parent_pid", PID);
-    	jsObj.addProperty("time", System.currentTimeMillis() / 1000);
-    	jsObj.addProperty("storage_class", storageClass);
-    	jsObj.addProperty("action", "recall");
-    	jsObj.addProperty("path", path);	
+        JsonObject jsObj = new JsonObject();
+        jsObj.addProperty("file_size", size);
+        jsObj.addProperty("parent_pid", PID);
+        jsObj.addProperty("time", System.currentTimeMillis() / 1000);
+        jsObj.addProperty("storage_class", storageClass);
+        jsObj.addProperty("action", "recall");
+        jsObj.addProperty("path", path);
     	    	
-    	FileUtils.write(requestFile.toFile(), jsObj.toString(),  StandardCharsets.UTF_8);
+        FileUtils.write(requestFile.toFile(), jsObj.toString(),  StandardCharsets.UTF_8);
  	
         return null;
     }

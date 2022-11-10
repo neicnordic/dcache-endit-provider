@@ -66,10 +66,10 @@ class FlushTask implements PollingTask<Set<URI>>
         file = request.getFile();
         outFile = outDir.resolve(file.getName());
         pnfsId = request.getFileAttributes().getPnfsId();
- 	requestFile = requestDir.resolve(pnfsId.toString());
-  	size = request.getFileAttributes().getSize();       
+        requestFile = requestDir.resolve(pnfsId.toString());
+        size = request.getFileAttributes().getSize();
         storageClass =request.getFileAttributes().getStorageClass();
- 	path = request.getFileAttributes().getStorageInfo().getMap().get("path");        
+        path = request.getFileAttributes().getStorageInfo().getMap().get("path");
         checksums = request.getFileAttributes().getChecksums();
         
     }
@@ -91,14 +91,14 @@ class FlushTask implements PollingTask<Set<URI>>
         }
 
 
-    	JsonObject jsObj = new JsonObject();
-    	jsObj.addProperty("file_size", size);
-    	jsObj.addProperty("time", System.currentTimeMillis() / 1000);
-    	jsObj.addProperty("storage_class", storageClass);
-    	jsObj.addProperty("action", "migrate");
-    	jsObj.addProperty("path", path);
-    	jsObj.addProperty("checksumType", checksumType);
-    	jsObj.addProperty("checksumValue", checksumValue);     	
+        JsonObject jsObj = new JsonObject();
+        jsObj.addProperty("file_size", size);
+        jsObj.addProperty("time", System.currentTimeMillis() / 1000);
+        jsObj.addProperty("storage_class", storageClass);
+        jsObj.addProperty("action", "migrate");
+        jsObj.addProperty("path", path);
+        jsObj.addProperty("checksumType", checksumType);
+        jsObj.addProperty("checksumValue", checksumValue);
     	
         FileUtils.write(requestFile.toFile(), jsObj.toString(),  StandardCharsets.UTF_8);
          
@@ -121,7 +121,7 @@ class FlushTask implements PollingTask<Set<URI>>
            // <storename> and <groupname> : The store and group name of the file as provided by the arguments to this executable.  
            // <bfid>: The unique identifier needed to restore or remove the file if necessary.   
            LOGGER.debug("Send back uri: " + uri.toString());
-   	   Files.deleteIfExists(requestFile);
+           Files.deleteIfExists(requestFile);
            
 	   return Collections.singleton(uri);
         }
