@@ -22,7 +22,6 @@ import com.google.common.util.concurrent.AsyncFunction;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.ListeningExecutorService;
-import com.google.common.util.concurrent.MoreExecutors;
 
 import java.io.IOException;
 import java.net.URI;
@@ -127,7 +126,7 @@ public abstract class AbstractEnditNearlineStorage extends ListeningNearlineStor
                                              return schedule(task);
                                          }
                                      }
-                                 }, MoreExecutors.directExecutor());
+                                 }, executor());
     }
 
     @Override
@@ -143,7 +142,7 @@ public abstract class AbstractEnditNearlineStorage extends ListeningNearlineStor
                                       {
                                           return request.allocate();
                                       }
-                                  }, MoreExecutors.directExecutor()),
+                                  }, executor()),
                 new AsyncFunction<Void, Set<Checksum>>()
                 {
                     @Override
@@ -156,6 +155,6 @@ public abstract class AbstractEnditNearlineStorage extends ListeningNearlineStor
                             return schedule(task);
                         }
                     }
-                }, MoreExecutors.directExecutor());
+                }, executor());
     }
 }
