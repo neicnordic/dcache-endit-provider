@@ -38,8 +38,6 @@ import diskCacheV111.util.PnfsId;
 
 import static java.util.Arrays.asList;
 
-import org.dcache.util.Checksum;
-
 import com.google.gson.JsonObject;
 import org.apache.commons.io.FileUtils;
 
@@ -50,27 +48,16 @@ class FlushTask implements PollingTask<Set<URI>>
     private final PnfsId pnfsId;
     private final String type;
     private final String name;
-    private final Path requestFile;
-    private final long size;
-    private final String storageClass;
-    private final String path;
-    
-    private final Set<Checksum> checksums;
     
     private final static Logger LOGGER = LoggerFactory.getLogger(FlushTask.class);
 
-    public FlushTask(FlushRequest request, Path requestDir, Path outDir, String type, String name)
+    public FlushTask(FlushRequest request, Path outDir, String type, String name)
     {
         this.type = type;
         this.name = name;
         file = request.getFile();
         outFile = outDir.resolve(file.getName());
         pnfsId = request.getFileAttributes().getPnfsId();
-        requestFile = requestDir.resolve(pnfsId.toString());
-        size = request.getFileAttributes().getSize();
-        storageClass =request.getFileAttributes().getStorageClass();
-        path = request.getFileAttributes().getStorageInfo().getMap().get("path");
-        checksums = request.getFileAttributes().getChecksums();
         
     }
 
@@ -82,26 +69,6 @@ class FlushTask implements PollingTask<Set<URI>>
     @Override
     public Set<URI> start() throws IOException
     {
-        String checksumType="";
-        String checksumValue="";
-
-        for (Checksum checksum: checksums) {
-            checksumType = checksum.getType().getName().toLowerCase();
-            checksumValue = checksum.getValue();           
-        }
-
-
-        JsonObject jsObj = new JsonObject();
-        jsObj.addProperty("file_size", size);
-        jsObj.addProperty("time", System.currentTimeMillis() / 1000);
-        jsObj.addProperty("storage_class", storageClass);
-        jsObj.addProperty("action", "migrate");
-        jsObj.addProperty("path", path);
-        jsObj.addProperty("checksumType", checksumType);
-        jsObj.addProperty("checksumValue", checksumValue);
-    	
-        FileUtils.write(requestFile.toFile(), jsObj.toString(),  StandardCharsets.UTF_8);
-         
         try {
             Files.createLink(outFile, file.toPath());
         } catch (FileAlreadyExistsException ignored) {
@@ -121,7 +88,6 @@ class FlushTask implements PollingTask<Set<URI>>
            // <storename> and <groupname> : The store and group name of the file as provided by the arguments to this executable.  
            // <bfid>: The unique identifier needed to restore or remove the file if necessary.   
            LOGGER.debug("Send back uri: " + uri.toString());
-           Files.deleteIfExists(requestFile);
            
 	   return Collections.singleton(uri);
         }
@@ -131,6 +97,6 @@ class FlushTask implements PollingTask<Set<URI>>
     @Override
     public boolean abort() throws IOException
     {
-       return Files.deleteIfExists(outFile) && Files.deleteIfExists(requestFile);
+       return Files.deleteIfExists(outFile);
     }
 }
