@@ -72,11 +72,10 @@ public class WatchingEnditNearlineStorage extends AbstractEnditNearlineStorage
     @Override
     protected <T> ListenableFuture<T> schedule(PollingTask<T> task)
     {
-        start();
         return new TaskFuture<>(task);
     }
 
-    private synchronized void start()
+    public synchronized void start()
     {
         if (watchTask == null) {
             watchTask = executor.submit(new WatchTask());
