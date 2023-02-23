@@ -31,6 +31,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Map;
 import java.util.Set;
+import java.util.Collections;
 
 import org.dcache.pool.nearline.spi.FlushRequest;
 import org.dcache.pool.nearline.spi.RemoveRequest;
@@ -133,28 +134,54 @@ public abstract class AbstractEnditNearlineStorage extends ListeningNearlineStor
     protected ListenableFuture<Set<Checksum>> stage(final StageRequest request)
     {
         final PollingTask<Set<Checksum>> task = new StageTask(request, requestDir, inDir);
+
+        // This is an ugly workaround to delay space allocation until after
+        // (pre)stage has happened. It has multiple quirks:
+        // 1) Someone with more Java knowledge should be able to carry the
+        //    returned checksums forward instead of discarding it and
+        //    recreating the empty checksum list later on.
+        // 2) Allocation happens after the file has been moved to final
+        //    destination by StageTask. The impact of this is mostly esthectic.
         return Futures.transformAsync(
-                Futures.transformAsync(request.activate(),
-                                  new AsyncFunction<Void, Void>()
-                                  {
-                                      @Override
-                                      public ListenableFuture<Void> apply(Void ignored) throws Exception
-                                      {
-                                          return request.allocate();
-                                      }
-                                  }, executor()),
-                new AsyncFunction<Void, Set<Checksum>>()
-                {
-                    @Override
-                    public ListenableFuture<Set<Checksum>> apply(Void ignored) throws Exception
+            Futures.transformAsync(
+                Futures.transformAsync(
+                        request.activate()
+                        ,
+                        new AsyncFunction<Void, Set<Checksum>>()
+                        {
+                            @Override
+                            public ListenableFuture<Set<Checksum>> apply(Void ignored) throws Exception
+                            {
+                                Set<Checksum> checksums = task.start();
+                                if (checksums != null) {
+                                    return Futures.immediateFuture(checksums);
+                                } else {
+                                    return schedule(task);
+                                }
+                            }
+                        }, executor()
+                    ),
+
+                    new AsyncFunction<Set<Checksum>, Void>()
                     {
-                        Set<Checksum> checksums = task.start();
-                        if (checksums != null) {
-                            return Futures.immediateFuture(checksums);
-                        } else {
-                            return schedule(task);
+                        @Override
+                        public ListenableFuture<Void> apply(Set<Checksum> checksums) throws Exception
+                        {
+                            return request.allocate();
                         }
-                    }
-                }, executor());
+                    }, executor()
+                ),
+
+            // Return the empty checksum set we discarded earlier, this
+            // needs to be fixed if ENDIT gains knowledge of checksums.
+            new AsyncFunction<Void, Set<Checksum>>()
+            {
+                @Override
+                public ListenableFuture<Set<Checksum>> apply(Void ignored) throws Exception
+                {
+                    return Futures.immediateFuture(Collections.emptySet());
+                }
+            }, executor()
+        );
     }
 }
