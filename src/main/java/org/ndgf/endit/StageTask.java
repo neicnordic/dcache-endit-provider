@@ -26,6 +26,7 @@ import com.sun.jna.Native;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.Collections;
 import java.util.List;
@@ -62,7 +63,7 @@ class StageTask implements PollingTask<Set<Checksum>>
 
     StageTask(StageRequest request, Path requestDir, Path inDir)
     {
-        file = request.getFile().toPath();
+        file = Paths.get(request.getReplicaUri());
         FileAttributes fileAttributes = request.getFileAttributes();
         String id = fileAttributes.getPnfsId().toString();
         size = fileAttributes.getSize();

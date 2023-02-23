@@ -64,7 +64,7 @@ class FlushTask implements PollingTask<Set<URI>>
     {
         this.type = type;
         this.name = name;
-        file = request.getFile();
+        file = new File(request.getReplicaUri().getPath());
         outFile = outDir.resolve(file.getName());
         pnfsId = request.getFileAttributes().getPnfsId();
         requestFile = requestDir.resolve(pnfsId.toString());
