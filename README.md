@@ -2,8 +2,8 @@
 
 This is the Efficient Northern Dcache Interface to TSM (ENDIT) [dCache]
 provider plugin. It interfaces with the
-[ENDIT daemons] to form an integration for the IBM Spectrum Protect
-(TSM) storage system.
+[ENDIT daemons] to form an integration for the IBM Storage Protect
+(Spectrum Protect, TSM) storage system.
 
 ## Installation
 
@@ -19,6 +19,11 @@ The watching provider uses the least system resources.
 
 The polling provider is the most performant, this is what's used in
 production on NDGF and what we recommend to use.
+
+The pool must be configured to leave free space for ENDIT
+(pre)staging, leave 500 GiB or 10% (use largest value) free. If you
+have very large files and/or use many tape drives you might need even
+more space.
 
 ### Watching provider
 
