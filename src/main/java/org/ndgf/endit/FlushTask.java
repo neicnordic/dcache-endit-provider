@@ -27,6 +27,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import org.slf4j.Logger;
@@ -48,6 +49,7 @@ class FlushTask implements PollingTask<Set<URI>>
     private final PnfsId pnfsId;
     private final String type;
     private final String name;
+    private final Map<String, String> xattrs;
     
     private final static Logger LOGGER = LoggerFactory.getLogger(FlushTask.class);
 
@@ -58,7 +60,7 @@ class FlushTask implements PollingTask<Set<URI>>
         file = request.getFile();
         outFile = outDir.resolve(file.getName());
         pnfsId = request.getFileAttributes().getPnfsId();
-        
+        xattrs = request.getFileAttributes().getXattrs();
     }
 
     public List<Path> getFilesToWatch()
