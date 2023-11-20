@@ -58,8 +58,6 @@ class FlushTask implements PollingTask<Set<URI>>
     
     private final Set<Checksum> checksums;
 
-    private final Map<String, String> xattrs;
-
     private final static Logger LOGGER = LoggerFactory.getLogger(FlushTask.class);
 
     public FlushTask(FlushRequest request, Path requestDir, Path outDir, String type, String name)
@@ -74,8 +72,6 @@ class FlushTask implements PollingTask<Set<URI>>
         storageClass =request.getFileAttributes().getStorageClass();
         path = request.getFileAttributes().getStorageInfo().getMap().get("path");
         checksums = request.getFileAttributes().getChecksums();
-        xattrs = request.getFileAttributes().getXattrs();
-        
     }
 
     public List<Path> getFilesToWatch()
