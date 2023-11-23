@@ -35,7 +35,7 @@ hsm create osm the-hsm-name endit-polling -directory=/path/to/endit/directory
 This provider accepts two additional options with the following default
 values:
 
-    -threads=1
+    -threads=20
     -period=5000
 
 The first is the number of threads used for polling for file changes
