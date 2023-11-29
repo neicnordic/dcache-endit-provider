@@ -1,16 +1,26 @@
-# dCache Endit Provider
+# dCache ENDIT Provider
 
-This [dCache] plugin interfaces with the [Endit] TSM integration system.
+This is the Efficient Northern Dcache Interface to TSM (ENDIT) [dCache]
+provider plugin. It interfaces with the
+[ENDIT daemons] to form an integration for the IBM Spectrum Protect
+(TSM) storage system.
 
-To compile the plugin, run:
-```
-mvn package
-```
+## Installation
 
-To install the plugin, unpack the resulting tarball in the dCache
+To install the plugin, unpack the tarball in the dCache
 plugin directory (usually `/usr/local/share/dcache/plugins`).
 
 ## Configuration
+
+There are two flavors of the ENDIT provider: The watching provider and
+the polling provider.
+
+The watching provider uses the least system resources.
+
+The polling provider is the most performant, this is what's used in
+production on NDGF and what we recommend to use.
+
+### Watching provider
 
 To use, define a nearline storage in the dCache admin interface:
 
@@ -25,7 +35,7 @@ The above will create a provider that uses the JVMs file event
 notification feature which in most cases maps directly to a native
 file event notification facility of the operating system.
 
-## Polling provider
+### Polling provider
 
 To use a provider that polls for changes, use:
 ```
@@ -41,6 +51,8 @@ values:
 The first is the number of threads used for polling for file changes
 and the second is the poll period in milliseconds.
 
+For sites with large request queues we recommend to increase the thread
+count further, 200 threads are used in production on NDGF.
 
 ### Notes on the provider behaviour
 
@@ -58,5 +70,44 @@ and the second is the poll period in milliseconds.
 * The error file's path has to be `/request/<pnfsid>.err`
 * Shutting down the polling provider and/or the pool does clean up existing request files.
 
+
+## More documentation
+
+More verbose instructions are available at
+https://wiki.neic.no/wiki/DCache_TSM_interface.
+
+# Collaboration
+
+Patches, suggestions, and general improvements are most welcome.
+
+We use the
+[GitHub issue tracker](https://github.com/neicnordic/dcache-endit-provider/issues)
+to track and discuss proposed improvements.
+
+When submitting code, open an issue to track/discuss pull-request(s) and
+refer to that issue in the pull-request. Pull-requests should be based
+on the master branch.
+
+## License
+
+AGPL-3.0, see [LICENSE](LICENSE.txt)
+
+## Versioning
+
+[Semantic Versioning 2.0.0](https://semver.org/)
+
+## Building
+
+To compile the plugin, run:
+```
+mvn package
+```
+
+## API
+
+FIXME: The file-based API between the ENDIT dCache plugin and the ENDIT
+daemons needs to be formally documented. For now, read the source of
+both for documentation.
+
 [dCache]: http://www.dcache.org/
-[Endit]:  https://github.com/neicnordic/endit
+[ENDIT daemons]:  https://github.com/neicnordic/endit
