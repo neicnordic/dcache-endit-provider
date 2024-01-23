@@ -12,33 +12,19 @@ plugin directory (usually `/usr/local/share/dcache/plugins`).
 
 ## Configuration
 
-There are two flavors of the ENDIT provider: The watching provider and
-the polling provider.
-
-The watching provider uses the least system resources.
+There are two flavors of the ENDIT provider: The polling provider and
+the watching provider.
 
 The polling provider is the most performant, this is what's used in
 production on NDGF and what we recommend to use.
 
-The pool must be configured to leave free space for ENDIT
-(pre)staging, leave 500 GiB or 10% (use largest value) free. If you
-have very large files and/or use many tape drives you might need even
-more space.
+The watching provider uses the least system resources, but should not be
+used in any situation where performance is of interest.
 
-### Watching provider
-
-To use, define a nearline storage in the dCache admin interface:
-
-```
-hsm create osm the-hsm-name endit -directory=/path/to/endit/directory
-```
-
-The endit directory must be on the same file system as the pool's
-data directory.
-
-The above will create a provider that uses the JVMs file event
-notification feature which in most cases maps directly to a native
-file event notification facility of the operating system.
+The pool must be configured to leave free space for [ENDIT daemons]
+(pre)staging, leave at least 1 TiB free. If you have very large files
+and/or use many tape drives you might need even more space, remember to
+also modify the `retriever_buffersize` [ENDIT daemons] option.
 
 ### Polling provider
 
@@ -46,6 +32,9 @@ To use a provider that polls for changes, use:
 ```
 hsm create osm the-hsm-name endit-polling -directory=/path/to/endit/directory
 ```
+
+The endit directory must be on the same file system as the pool's
+data directory.
 
 This provider accepts two additional options with the following default
 values:
@@ -59,7 +48,7 @@ and the second is the poll period in milliseconds.
 For sites with large request queues we recommend to increase the thread
 count further, 200 threads are used in production on NDGF.
 
-### Notes on the provider behaviour
+#### Notes on the provider behaviour
 
 * The polling provider does *not* monitor the request files, once they are created.
   Editing or deleting them has no consequences from the perspective of dCache.
@@ -75,6 +64,20 @@ count further, 200 threads are used in production on NDGF.
 * The error file's path has to be `/request/<pnfsid>.err`
 * Shutting down the polling provider and/or the pool does clean up existing request files.
 
+### Watching provider
+
+To use, define a nearline storage in the dCache admin interface:
+
+```
+hsm create osm the-hsm-name endit -directory=/path/to/endit/directory
+```
+
+The endit directory must be on the same file system as the pool's
+data directory.
+
+The above will create a provider that uses the JVMs file event
+notification feature which in most cases maps directly to a native
+file event notification facility of the operating system.
 
 ## More documentation
 
