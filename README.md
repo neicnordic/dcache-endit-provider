@@ -19,7 +19,7 @@ The polling provider is the most performant, this is what's used in
 production on NDGF and what we recommend to use.
 
 The watching provider uses the least system resources, but should not be
-used in any situation where performance is of interest.
+used in any situation where there is a high rate of recalls.
 
 The pool must be configured to leave free space for [ENDIT daemons]
 (pre)staging, leave at least 1 TiB free. If you have very large files
@@ -28,7 +28,9 @@ also modify the `retriever_buffersize` [ENDIT daemons] option.
 
 ### Polling provider
 
-To use a provider that polls for changes, use:
+To use a provider that polls for changes, define a nearline storage in
+the dCache admin interface:
+
 ```
 hsm create osm the-hsm-name endit-polling -directory=/path/to/endit/directory
 ```
@@ -113,8 +115,8 @@ mvn package
 
 ## API
 
-FIXME: The file-based API between the ENDIT dCache plugin and the ENDIT
-daemons needs to be formally documented. For now, read the source of
+FIXME: The file-based API between the ENDIT dCache plugin and the
+[ENDIT daemons] needs to be formally documented. For now, read the source of
 both for documentation.
 
 [dCache]: http://www.dcache.org/
