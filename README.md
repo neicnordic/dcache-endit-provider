@@ -34,8 +34,9 @@ duplicated to the `out/` directory using hardlinks.
 
 Note that since ENDIT v2 a late allocation scheme is used in order to
 expose all pending read requests to the pools. This minimizes tape
-remounts and thus optimizes access. For new installations, and when
-upgrading from ENDIT v1 to v2, note that:
+remounts and thus optimizes access. It also reduces the storage needed
+for staging. For new installations, and when upgrading from ENDIT v1 to
+v2, note that:
 
 - The dCache pool size needs to be set lower than the actual file space
   size, at least 100 GiB lower if the default [ENDIT daemons]
@@ -45,6 +46,9 @@ upgrading from ENDIT v1 to v2, note that:
   1 million requests on a single tape pool with
   [modest hardware](#development-performance-tests), central
   dCache resources on your site might well limit this number.
+- It is highly recommended to set up a migration job that moves staged
+  files from the tape pool onto disk pools and set up a link group that
+  only allows clients to fetch data from those disk pools.
 
 ### Watching provider
 
@@ -69,6 +73,7 @@ values:
     -period=110 - poll period in milliseconds
     -graceperiod=1000 - grace period in milliseconds between detecting file complete and moving to destination
     -watchtimeout=300 - Timeout in seconds of inactivity before a double-check of watch directory is done
+    -lateallocate=true - Allocate space when staging start is detected (false to allocate before submitting staging request)
 
 The number of threads and default poll period for the watching provider
 is lower compared to the polling provider, this is due to the fact that
@@ -92,6 +97,7 @@ values:
     -threads=16 - number of threads used for polling for file changes
     -period=1100 - poll period in milliseconds
     -graceperiod=1000 - grace period in milliseconds between detecting file complete and moving to destination
+    -lateallocate=true - Allocate space when staging start is detected (false to allocate before submitting staging request)
 
 ### Notes on the provider behaviour
 
