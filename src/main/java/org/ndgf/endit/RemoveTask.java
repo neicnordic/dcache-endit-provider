@@ -38,7 +38,7 @@ class RemoveTask implements Callable<Void>
     private final RemoveRequest request;
     private final Path trashDir;
 
-    private final static Logger LOGGER = LoggerFactory.getLogger(FlushTask.class);
+    private final static Logger LOGGER = LoggerFactory.getLogger(RemoveTask.class);
 
     public RemoveTask(RemoveRequest request, Path trashDir)
     {
@@ -60,7 +60,7 @@ class RemoveTask implements Callable<Void>
         Files.write(tmpf, uri.toASCIIString().getBytes(StandardCharsets.UTF_8));
         Files.move(tmpf, trashDir.resolve(id), StandardCopyOption.ATOMIC_MOVE);
 
-        LOGGER.debug("RemoveTask call: wrote " + trashDir.resolve(id));
+        LOGGER.debug("RemoveTask call: wrote {}", trashDir.resolve(id));
 
         return null;
     }

@@ -128,15 +128,17 @@ class FlushTask implements PollingTask<Set<URI>>
     public Set<URI> poll() throws URISyntaxException, IOException
     {
         if (!Files.exists(outFile)) {
-           LOGGER.debug("FlushTask poll: File " + name + " deleted");
+           LOGGER.debug("FlushTask poll: id {}: File {} not present, flushed.", pnfsId.toString(), name);
            URI uri = new URI(type, name, null, "bfid=" + pnfsId.toString(), null);
            // URI format: hsmType://hsmInstance/?store=storename&group=groupname&bfid=bfid  
            // <hsmType>: The type of the Tertiary Storage System  
            // <hsmInstance>: The name of the instance  
            // <storename> and <groupname> : The store and group name of the file as provided by the arguments to this executable.  
            // <bfid>: The unique identifier needed to restore or remove the file if necessary.   
-           LOGGER.debug("FlushTask poll: Send back uri: " + uri.toString());
-           Files.deleteIfExists(requestFile);
+           LOGGER.debug("FlushTask poll: id {}: Send back uri: {}", pnfsId.toString(), uri.toString());
+           if(Files.deleteIfExists(requestFile)) {
+               LOGGER.debug("FlushTask poll: id {}: Deleted {}", pnfsId.toString(), requestFile);
+           }
            
 	   return Collections.singleton(uri);
         }
@@ -150,13 +152,17 @@ class FlushTask implements PollingTask<Set<URI>>
         * hope that the daemon hasn't grabbed it for processing.
         */
        if(Files.deleteIfExists(outFile)) {
-          Files.deleteIfExists(requestFile);
+          LOGGER.debug("FlushTask abort: id {}: Deleted {}", pnfsId.toString(), outFile);
 
-          LOGGER.debug("FlushTask abort: return true");
+          if(Files.deleteIfExists(requestFile)) {
+              LOGGER.debug("FlushTask abort: id {}: Deleted {}", pnfsId.toString(), requestFile);
+          }
+
+          LOGGER.debug("FlushTask abort: id {}: return true", pnfsId.toString());
           return true;
        }
 
-       LOGGER.debug("FlushTask abort: return false");
+       LOGGER.debug("FlushTask abort: id {}: return false", pnfsId.toString());
        return false;
     }
 }

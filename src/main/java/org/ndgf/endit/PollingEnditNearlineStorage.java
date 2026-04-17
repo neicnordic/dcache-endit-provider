@@ -34,7 +34,7 @@ import java.util.concurrent.TimeUnit;
 
 public class PollingEnditNearlineStorage extends AbstractEnditNearlineStorage
 {
-    private final static Logger LOGGER = LoggerFactory.getLogger(WatchingEnditNearlineStorage.class);
+    private final static Logger LOGGER = LoggerFactory.getLogger(PollingEnditNearlineStorage.class);
 
     protected int period;
 

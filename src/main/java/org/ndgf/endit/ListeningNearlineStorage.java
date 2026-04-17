@@ -44,15 +44,19 @@ public abstract class ListeningNearlineStorage implements NearlineStorage
 {
     private final ConcurrentMap<UUID, Future<?>> tasks = new ConcurrentHashMap<>();
 
-    private final static Logger LOGGER = LoggerFactory.getLogger(WatchingEnditNearlineStorage.class);
+    private final static Logger LOGGER = LoggerFactory.getLogger(ListeningNearlineStorage.class);
 
     @Override
     public void cancel(UUID uuid)
     {
         Future<?> task = tasks.get(uuid);
-        LOGGER.debug("ListeningNearlineStorage cancel: called");
+        LOGGER.debug("ListeningNearlineStorage cancel: uuid {}: called", uuid);
         if (task != null) {
+            LOGGER.debug("ListeningNearlineStorage cancel: uuid {}: calling task.cancel(true)", uuid);
             task.cancel(true);
+        }
+        else {
+            LOGGER.debug("ListeningNearlineStorage cancel: uuid {}: no task found", uuid);
         }
     }
 
@@ -93,7 +97,10 @@ public abstract class ListeningNearlineStorage implements NearlineStorage
 
     private <T> void add(final NearlineRequest<T> request, final ListenableFuture<T> future)
     {
-        tasks.put(request.getId(), future);
+        if (tasks.putIfAbsent(request.getId(), future) != null) {
+            request.failed(new IllegalStateException("Duplicate nearline requests on uuid " + request.getId()));
+        }
+        LOGGER.debug("ListeningNearlineStorage add: put uuid {} in task list", request.getId());
         future.addListener(new Runnable()
         {
             @Override
@@ -102,15 +109,18 @@ public abstract class ListeningNearlineStorage implements NearlineStorage
                 tasks.remove(request.getId());
                 try {
                     T result = Uninterruptibles.getUninterruptibly(future);
-                    LOGGER.debug("ListeningNearlineStorage add: Calling request.completed(result)");
+                    LOGGER.debug("ListeningNearlineStorage add run(): uuid {}: Calling request.completed(result)", request.getId());
                     request.completed(result);
                 } catch (ExecutionException | CancellationException e) {
-                    if (e.getCause() instanceof EnditException) {
+                    if (e instanceof CancellationException) {
+                        LOGGER.debug("ListeningNearlineStorage add run(): uuid {}: CancellationException, calling request.failed(e)", request.getId());
+                        request.failed(e);
+                    } else if (e.getCause() instanceof EnditException) {
                         EnditException cause = (EnditException) e.getCause();
-                        LOGGER.debug("ListeningNearlineStorage add: Calling request.failed(cause)");
+                        LOGGER.debug("ListeningNearlineStorage add run(): uuid {}: Calling request.failed(cause)", request.getId());
                         request.failed(cause.getReturnCode(), cause.getMessage());
                     } else {
-                        LOGGER.debug("ListeningNearlineStorage add: Calling request.failed(e)");
+                        LOGGER.debug("ListeningNearlineStorage add run(): uuid {}: Calling request.failed(e)", request.getId());
                         request.failed(e);
                     }
                 }

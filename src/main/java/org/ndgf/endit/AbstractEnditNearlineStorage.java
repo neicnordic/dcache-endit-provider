@@ -34,6 +34,10 @@ import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.ListeningExecutorService;
 import com.google.common.util.concurrent.SettableFuture;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import org.dcache.pool.nearline.spi.FlushRequest;
 import org.dcache.pool.nearline.spi.RemoveRequest;
 import org.dcache.pool.nearline.spi.StageRequest;
@@ -44,6 +48,7 @@ import static com.google.common.base.Preconditions.checkState;
 
 public abstract class AbstractEnditNearlineStorage extends ListeningNearlineStorage
 {
+    private final static Logger LOGGER = LoggerFactory.getLogger(AbstractEnditNearlineStorage.class);
     protected final String type;
     protected final String name;
     protected volatile Path inDir;
@@ -96,7 +101,9 @@ public abstract class AbstractEnditNearlineStorage extends ListeningNearlineStor
 
         try (DirectoryStream<Path> paths = Files.newDirectoryStream(requestDir)) {
             for (Path requestFile : paths) {
-                Files.deleteIfExists(requestFile);
+                if(Files.deleteIfExists(requestFile)) {
+                    LOGGER.debug("AbstractEnditNearlineStorage configure: Deleted {}", requestFile);
+                }
             }
         } catch (IOException e) {
             new RuntimeException(e);
@@ -161,6 +168,7 @@ public abstract class AbstractEnditNearlineStorage extends ListeningNearlineStor
                                 schedule(starttask).addListener(() -> stageStarted.set(Boolean.TRUE), executor());
                             }
                         } catch (Exception e) {
+                            LOGGER.debug("AbstractEnditNearlineStorage start: exception: {}", e.toString());
                             stageStarted.setException(e);
                         }
                     }, executor());
@@ -181,6 +189,7 @@ public abstract class AbstractEnditNearlineStorage extends ListeningNearlineStor
                         schedule(completetask).addListener(() -> stageCompleted.set(Boolean.TRUE), executor());
                     }
                 } catch (Exception e) {
+                    LOGGER.debug("AbstractEnditNearlineStorage complete: exception: {}", e.toString());
                     stageCompleted.setException(e);
                 }
             }, executor());
@@ -191,6 +200,7 @@ public abstract class AbstractEnditNearlineStorage extends ListeningNearlineStor
                 try {
                     checksumAvailable.set(completetask.checksum());
                 } catch (Exception e) {
+                    LOGGER.debug("AbstractEnditNearlineStorage checksum: exception: {}", e.toString());
                     checksumAvailable.setException(e);
                 }
             }, executor());
@@ -216,6 +226,7 @@ public abstract class AbstractEnditNearlineStorage extends ListeningNearlineStor
                         schedule(starttask).addListener(() -> stageStarted.set(Boolean.TRUE), executor());
                     }
                 } catch (Exception e) {
+                    LOGGER.debug("AbstractEnditNearlineStorage start: exception: {}", e.toString());
                     stageStarted.setException(e);
                 }
             }, executor());
@@ -231,6 +242,7 @@ public abstract class AbstractEnditNearlineStorage extends ListeningNearlineStor
                         schedule(completetask).addListener(() -> stageCompleted.set(Boolean.TRUE), executor());
                     }
                 } catch (Exception e) {
+                    LOGGER.debug("AbstractEnditNearlineStorage complete: exception: {}", e.toString());
                     stageCompleted.setException(e);
                 }
             }, executor());
@@ -240,6 +252,7 @@ public abstract class AbstractEnditNearlineStorage extends ListeningNearlineStor
                 try {
                     checksumAvailable.set(completetask.checksum());
                 } catch (Exception e) {
+                    LOGGER.debug("AbstractEnditNearlineStorage checksum: exception: {}", e.toString());
                     checksumAvailable.setException(e);
                 }
             }, executor());

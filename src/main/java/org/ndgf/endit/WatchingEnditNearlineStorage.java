@@ -136,12 +136,14 @@ public class WatchingEnditNearlineStorage extends AbstractEnditNearlineStorage
                     WatchKey key = watcher.poll(watchtimeout, TimeUnit.SECONDS);
                     if(key == null) {
                         /* Watch poll timeout, double-check that we're in sync */
+                        LOGGER.debug("WatchingEnditNearlineStorage run: Watch poll timeout, doing pollAll()");
                         pollAll();
                         continue;
                     }
                     Path dir = (Path) key.watchable();
                     for (WatchEvent<?> event : key.pollEvents()) {
                         if (event.kind().equals(StandardWatchEventKinds.OVERFLOW)) {
+                            LOGGER.debug("WatchingEnditNearlineStorage run: Watch event overflow, doing pollAll()");
                             pollAll();
                         } else {
                             Path fileName = (Path) event.context();
@@ -154,8 +156,9 @@ public class WatchingEnditNearlineStorage extends AbstractEnditNearlineStorage
                 }
             } catch (InterruptedException ignored) {
             } catch (IOException e) {
-                LOGGER.warn("I/O error while watching Endit directories: {}", e.toString());
+                LOGGER.warn("WatchingEnditNearlineStorage run: I/O error while watching Endit directories: {}", e.toString());
             } finally {
+                LOGGER.debug("WatchingEnditNearlineStorage run: Cancelling tasks");
                 for (TaskFuture<?> task : tasks.values()) {
                     task.cancel(true);
                 }
@@ -238,6 +241,7 @@ public class WatchingEnditNearlineStorage extends AbstractEnditNearlineStorage
                 }
             } catch (Exception e) {
                 try {
+                    LOGGER.debug("WatchingEnditNearlineStorage poll: calling task.abort()");
                     task.abort();
                 } catch (Exception suppressed) {
                     e.addSuppressed(suppressed);
@@ -262,12 +266,15 @@ public class WatchingEnditNearlineStorage extends AbstractEnditNearlineStorage
                 return false;
             }
             try {
+                LOGGER.debug("WatchingEnditNearlineStorage cancel: calling task.abort()");
                 if (!task.abort()) {
                     LOGGER.debug("WatchingEnditNearlineStorage cancel: return false (task.abort false)");
                     return false;
                 }
+                LOGGER.debug("WatchingEnditNearlineStorage cancel: calling super.cancel(mayInterruptIfRunning)");
                 super.cancel(mayInterruptIfRunning);
             } catch (Exception e) {
+                LOGGER.debug("WatchingEnditNearlineStorage cancel: exception: {}", e.toString());
                 setException(e);
             }
             unregister();

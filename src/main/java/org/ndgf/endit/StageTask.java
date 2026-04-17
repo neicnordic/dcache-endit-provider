@@ -108,7 +108,7 @@ class StageTask implements PollingStageTask<Boolean>
         doWatch = true;
 
         if (Files.isRegularFile(inFile)) {
-            LOGGER.debug("StageTask start: found " + inFile);
+            LOGGER.debug("StageTask start: id {}: found {}", id, inFile);
             return true;
         }
 
@@ -126,7 +126,7 @@ class StageTask implements PollingStageTask<Boolean>
         Path tmpf = Files.createTempFile(requestDir, id + ".", ".stage.tmp");
         FileUtils.write(tmpf.toFile(), jsObj.toString(),  StandardCharsets.UTF_8);
         Files.move(tmpf, requestFile, StandardCopyOption.ATOMIC_MOVE);
-        LOGGER.debug("StageTask start: wrote " + requestFile);
+        LOGGER.debug("StageTask start: id {}: wrote {}", id, requestFile);
 
         return null;
     }
@@ -142,7 +142,7 @@ class StageTask implements PollingStageTask<Boolean>
 
         doComplete = true;
 
-        LOGGER.debug("StageTask complete: called");
+        LOGGER.debug("StageTask complete: id {}: called", id);
 
         return poll();
     }
@@ -155,30 +155,39 @@ class StageTask implements PollingStageTask<Boolean>
         if (Files.exists(errorFile)) {
             List<String> lines;
             try {
-                Thread.sleep(ERROR_GRACE_PERIOD);
+                LOGGER.debug("StageTask poll: id {}: Error file " + errorFile + " detected, sleeping {} ms before handling error.", id, ERROR_GRACE_PERIOD);
+                Thread.sleep(ERROR_GRACE_PERIOD); // Locks this execution thread
                 lines = Files.readAllLines(errorFile, StandardCharsets.UTF_8);
             } finally {
-                Files.deleteIfExists(inFile);
-                Files.deleteIfExists(errorFile);
-                Files.deleteIfExists(requestFile);
+                if(Files.deleteIfExists(inFile)) {
+                    LOGGER.debug("StageTask poll: id {}: Deleted {}", id, inFile);
+                }
+                if(Files.deleteIfExists(errorFile)) {
+                    LOGGER.debug("StageTask poll: id {}: Deleted {}", id, errorFile);
+                }
+                if(Files.deleteIfExists(requestFile)) {
+                    LOGGER.debug("StageTask poll: id {}: Deleted {}", id, requestFile);
+                }
             }
             throw EnditException.create(lines);
         }
 
         if(doStart) {
             if (Files.isRegularFile(inFile)) {
-                LOGGER.debug("StageTask poll: found " + inFile);
+                LOGGER.debug("StageTask poll: id {}: found {}", id, inFile);
                 return true;
             }
         }
         else if(doComplete) {
             if(Files.isRegularFile(inFile) && Files.size(inFile) == size) {
-                LOGGER.debug("StageTask poll: inFile " + inFile + " size " + size);
+                LOGGER.debug("StageTask poll: id {}: inFile " + inFile + " size " + size, id);
                 if(delayUntil < 0) {
-                    Files.deleteIfExists(requestFile);
+                    if(Files.deleteIfExists(requestFile)) {
+                        LOGGER.debug("StageTask poll: id {}: Deleted {}", id, requestFile);
+                    }
                     if(graceperiod > 0) {
                         delayUntil = System.currentTimeMillis() + graceperiod;
-                        LOGGER.debug("StageTask poll: inFile " + inFile + " delayUntil " + delayUntil);
+                        LOGGER.debug("StageTask poll: id {}: inFile " + inFile + " delayUntil " + delayUntil, id);
                         return null;
                     }
                     else {
@@ -186,12 +195,12 @@ class StageTask implements PollingStageTask<Boolean>
                     }
                 }
                 if(delayUntil > 0 && System.currentTimeMillis() < delayUntil) {
-                    LOGGER.debug("StageTask poll: inFile " + inFile + " delaying");
+                    LOGGER.debug("StageTask poll: id {}: inFile {} delaying", id, inFile);
                     return null;
                 }
 
                 Files.move(inFile, file, StandardCopyOption.ATOMIC_MOVE);
-                LOGGER.debug("StageTask poll: inFile " + inFile + " moved to " + file);
+                LOGGER.debug("StageTask poll: id {}: inFile " + inFile + " complete, moved to " + file, id);
 
                 return true;
             }
@@ -207,6 +216,7 @@ class StageTask implements PollingStageTask<Boolean>
     @Override
     public Set<Checksum> checksum() throws Exception
     {
+        LOGGER.debug("StageTask checksum: id {}: called", id);
         // No proper checksum retention yet.
         return Collections.emptySet();
     }
@@ -218,10 +228,14 @@ class StageTask implements PollingStageTask<Boolean>
         * behind this is that the request has likely timed out and will be
         * retried shortly, saving us from having the daemon stage it again.
         */
-       Files.deleteIfExists(requestFile);
-       Files.deleteIfExists(errorFile);
+       if(Files.deleteIfExists(requestFile)) {
+           LOGGER.debug("StageTask abort: id {}: Deleted {}", id, requestFile);
+       }
+       if(Files.deleteIfExists(errorFile)) {
+           LOGGER.debug("StageTask abort: id {}: Deleted {}", id, errorFile);
+       }
 
-       LOGGER.debug("StageTask abort: return true");
+       LOGGER.debug("StageTask abort: id {}: return true", id);
        return true;
     }
 
