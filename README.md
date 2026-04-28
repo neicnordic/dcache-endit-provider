@@ -326,8 +326,10 @@ is used that are residing on FILE pools on the TSM server. This is done
 to avoid the need of having a very IO-bandwidth heavy, and thus
 expensive, test system.
 
-With this setup we expect to be able to handle 1M requests queued while
-staging requests at a rate in excess of 200 Hz.
+With this setup we expect to be able to handle 100000 requests queued while
+staging requests at a rate in excess of 200 Hz. Very occasionally we also
+test with 1 million requests queued, since this takes a lot of time to
+prepare/test.
 
 The test hardware basics:
 
