@@ -162,7 +162,7 @@ whatever fits your system.
 
 ## Configuration
 
-** FIXME: Move stuff here**
+**FIXME:** Move stuff here
 
 Note that since ENDIT v2 a late allocation scheme is used in order to
 expose all pending read requests to the pools. This minimizes tape
@@ -202,12 +202,12 @@ defined nearline storage instances including their parameters.
 
 ### Watching provider
 
-FIXME: Example of how to see which parameters are defined, print at
+**FIXME:** Example of how to see which parameters are defined, print at
 startup too?
 
 To use, define a nearline storage in the dCache admin interface:
 
-FIXME: Fix command syntax
+**FIXME:** Fix command syntax
 
 ```
 hsm create osm the-hsm-name endit-watching -directory=/path/to/endit/directory
@@ -239,7 +239,7 @@ only files in progress are monitored using polling.
 To use a provider that polls for changes, define a nearline storage in
 the dCache admin interface:
 
-FIXME: Fix command syntax
+**FIXME:** Fix command syntax
 
 ```
 hsm create osm the-hsm-name endit-polling -directory=/path/to/endit/directory
