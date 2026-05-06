@@ -289,6 +289,21 @@ AGPL-3.0, see [LICENSE](LICENSE.txt)
 
 [Semantic Versioning 2.0.0](https://semver.org/)
 
+
+## Contributors
+
+The ENDIT project started in April 2006 using the original script-based
+HSM interface in dCache. This ENDIT dCache provider plugin was created
+together with the dCache nearline storage SPI in 2014 to improve
+performance and reduce resource usage when handling many concurrent
+requests. This list of contributors refers to this provider plugin.
+
+* Gerd Behrmann - original author
+* Vincent Garonne - previous maintainer
+* Krishnaveni Chitrapu - previous maintainer
+* Niklas Edmundsson <nikke@hpc2n.umu.se> - current maintainer
+* Tigran Mkrtchyan - various contributions and fixes
+
 ## Building
 
 To compile the plugin, run:
