@@ -148,116 +148,134 @@ public abstract class AbstractEnditNearlineStorage extends ListeningNearlineStor
         final PollingStageTask<Boolean> starttask = new StageTask(request, requestDir, inDir, graceperiod);
         final PollingStageTask<Boolean> completetask = new StageTask(request, requestDir, inDir, graceperiod);
 
-        // We use SettableFutures to chain the asynchronous execution by setting value when previous stage is complete.
-        SettableFuture<Boolean> stageStarted = SettableFuture.create();
-        SettableFuture<Void> stageAllocated = SettableFuture.create();
-        SettableFuture<Boolean> stageCompleted = SettableFuture.create();
-        SettableFuture<Set<Checksum>> checksumAvailable = SettableFuture.create();
-
         if (lateAllocation) {
             // activate -> start -> allocate -> complete -> checksum
 
-            // Activate the request and start the stage task.
-            request.activate()
-                    .addListener(() -> {
-                        try {
-                            Boolean done = starttask.start();
-                            if (done != null && done) {
-                                stageStarted.set(Boolean.TRUE);
-                            } else {
-                                schedule(starttask).addListener(() -> stageStarted.set(Boolean.TRUE), executor());
+            return Futures.transformAsync(
+                Futures.transformAsync(
+                    Futures.transformAsync(
+                        Futures.transformAsync(
+                            // Activate the request
+                            request.activate()
+                            ,
+                            // Start the stage task.
+                            new AsyncFunction<Void, Boolean>()
+                            {
+                                @Override
+                                public ListenableFuture<Boolean> apply(Void ignored) throws Exception
+                                {
+                                    Boolean done = starttask.start();
+                                    if (done!=null && done) {
+                                        return Futures.immediateFuture(done);
+                                    } else {
+                                        return schedule(starttask);
+                                    }
+                                }
+                            }, executor()
+                        ),
+
+                        // When staging start is detected, run space
+                        // allocation.
+                        new AsyncFunction<Boolean, Void>()
+                        {
+                            @Override
+                            public ListenableFuture<Void> apply(Boolean ignored) throws Exception
+                            {
+                                return request.allocate();
                             }
-                        } catch (Exception e) {
-                            LOGGER.debug("AbstractEnditNearlineStorage start: exception: {}", e.toString());
-                            stageStarted.setException(e);
-                        }
-                    }, executor());
+                        }, executor()
+                    ),
 
-            // When staging start is detected, run space allocation.
-            stageStarted.addListener(() -> {
-                    request.allocate()
-                                    .addListener(() -> stageAllocated.set(null), executor());
-            }, executor());
+                    // After allocation, wait for stage completion.
+                    new AsyncFunction<Void, Boolean>()
+                    {
+                        @Override
+                        public ListenableFuture<Boolean> apply(Void ignored) throws Exception
+                        {
+                            Boolean done = completetask.complete();
+                            if (done!=null && done) {
+                                return Futures.immediateFuture(done);
+                             } else {
+                                return schedule(completetask);
+                             }
+                         }
+                    }, executor()
+                ),
 
-            // After allocation, wait for stage completion.
-            stageAllocated.addListener(() -> {
-                try {
-                    Boolean done = completetask.complete();
-                    if (done != null && done) {
-                        stageCompleted.set(Boolean.TRUE);
-                    } else {
-                        schedule(completetask).addListener(() -> stageCompleted.set(Boolean.TRUE), executor());
-                    }
-                } catch (Exception e) {
-                    LOGGER.debug("AbstractEnditNearlineStorage complete: exception: {}", e.toString());
-                    stageCompleted.setException(e);
-                }
-            }, executor());
-
-
-            // We can get the checksum when the stage is complete.
-            stageCompleted.addListener(() -> {
-                try {
-                    checksumAvailable.set(completetask.checksum());
-                } catch (Exception e) {
-                    LOGGER.debug("AbstractEnditNearlineStorage checksum: exception: {}", e.toString());
-                    checksumAvailable.setException(e);
-                }
-            }, executor());
-
+                // We can get the checksum when the stage is complete.
+                new AsyncFunction<Boolean, Set<Checksum>>()
+                {
+                    @Override
+                    public ListenableFuture<Set<Checksum>> apply(Boolean ignored) throws Exception
+                    {
+                        return Futures.immediateFuture(completetask.checksum());
+                     }
+                }, executor()
+            );
         } else {
             // activate -> allocate -> start -> complete -> checksum
 
+            return Futures.transformAsync(
+                Futures.transformAsync(
+                    Futures.transformAsync(
+                        Futures.transformAsync(
+                            // Activate the request
+                            request.activate()
+                            ,
+                            // Allocate space
+                            new AsyncFunction<Void, Void>()
+                            {
+                                @Override
+                                public ListenableFuture<Void> apply(Void ignored) throws Exception
+                                {
+                                    return request.allocate();
+                                }
+                            }, executor()
+                        ),
 
-            // Activate request and allocate space.
-            request.activate()
-                    .addListener(() -> request.allocate()
-                                    .addListener(() -> stageAllocated.set(null), executor()),
-                            executor()
-                    );
+                        // Once space is allocated, start the stage task.
+                        new AsyncFunction<Void, Boolean>()
+                        {
+                            @Override
+                            public ListenableFuture<Boolean> apply(Void ignored) throws Exception
+                            {
+                                Boolean done = starttask.start();
+                                if (done!=null && done) {
+                                    return Futures.immediateFuture(done);
+                                } else {
+                                    return schedule(starttask);
+                                }
+                            }
+                        }, executor()
+                    ),
 
-            // Once space is allocated, start the stage task.
-            stageAllocated.addListener(() -> {
-                try {
-                    Boolean done = starttask.start();
-                    if (done != null && done) {
-                        stageStarted.set(Boolean.TRUE);
-                    } else {
-                        schedule(starttask).addListener(() -> stageStarted.set(Boolean.TRUE), executor());
-                    }
-                } catch (Exception e) {
-                    LOGGER.debug("AbstractEnditNearlineStorage start: exception: {}", e.toString());
-                    stageStarted.setException(e);
-                }
-            }, executor());
+                    // And wait for stage completion.
+                    new AsyncFunction<Boolean, Boolean>()
+                    {
+                        @Override
+                        public ListenableFuture<Boolean> apply(Boolean ignored) throws Exception
+                        {
+                            Boolean done = completetask.complete();
+                            if (done!=null && done) {
+                                return Futures.immediateFuture(done);
+                             } else {
+                                return schedule(completetask);
+                             }
+                         }
+                    }, executor()
+                ),
 
-
-            // And wait for stage completion.
-            stageAllocated.addListener(() -> {
-                try {
-                    Boolean done = completetask.complete();
-                    if (done != null && done) {
-                        stageCompleted.set(Boolean.TRUE);
-                    } else {
-                        schedule(completetask).addListener(() -> stageCompleted.set(Boolean.TRUE), executor());
-                    }
-                } catch (Exception e) {
-                    LOGGER.debug("AbstractEnditNearlineStorage complete: exception: {}", e.toString());
-                    stageCompleted.setException(e);
-                }
-            }, executor());
-
-            // We can get the checksum when the stage is complete.
-            stageCompleted.addListener(() -> {
-                try {
-                    checksumAvailable.set(completetask.checksum());
-                } catch (Exception e) {
-                    LOGGER.debug("AbstractEnditNearlineStorage checksum: exception: {}", e.toString());
-                    checksumAvailable.setException(e);
-                }
-            }, executor());
+                // We can get the checksum when the stage is complete.
+                new AsyncFunction<Boolean, Set<Checksum>>()
+                {
+                    @Override
+                    public ListenableFuture<Set<Checksum>> apply(Boolean ignored) throws Exception
+                    {
+                        return Futures.immediateFuture(completetask.checksum());
+                     }
+                }, executor()
+            );
         }
 
-        return checksumAvailable;
     }
 }
