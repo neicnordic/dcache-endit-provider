@@ -152,12 +152,11 @@ dCache restart a simple solution is to use a `tmpfs` file system.
 
 ## Installation
 
-**FIXME:** Seems the plugin goes into the classes directory, so this is
-wrong. Investigate what's the sane way to do it without mixing with
-dcache-shipped files.
-
-To install the dCache ENDIT provider plugin, unpack the tarball in the dCache
-plugin directory (usually `/usr/local/share/dcache/plugins`).
+To install the dCache ENDIT provider plugin, download and unpack the tarball in a
+subdir of the dCache plugin directory (commonly
+`/usr/local/share/dcache/plugins/hsm`). Only the `.jar` file is needed,
+so if you are using a configuration management system only installing
+the `.jar` file of the tarball is sufficient.
 
 Since the provider configuration is dependant on the integration setup
 we recommend installing and setting up the integration with your
