@@ -205,15 +205,10 @@ defined nearline storage instances including their parameters.
 
 ### Watching provider
 
-**FIXME:** Example of how to see which parameters are defined, print at
-startup too?
-
 To use, define a nearline storage in the dCache admin interface:
 
-**FIXME:** Fix command syntax
-
 ```
-hsm create osm the-hsm-name endit-watching -directory=/path/to/endit/directory
+hsm create osm chosen-instance-name endit-watching -directory=/your/pool/endit/directory
 ```
 
 The endit directory must be on the same file system as the pool's
@@ -242,10 +237,8 @@ only files in progress are monitored using polling.
 To use a provider that polls for changes, define a nearline storage in
 the dCache admin interface:
 
-**FIXME:** Fix command syntax
-
 ```
-hsm create osm the-hsm-name endit-polling -directory=/path/to/endit/directory
+hsm create osm chosen-instance-name endit-polling -directory=/your/pool/endit/directory
 ```
 
 The endit directory must be on the same file system as the pool's
@@ -278,7 +271,10 @@ When submitting code, open an issue to track/discuss pull-request(s) and
 refer to that issue in the pull-request. Pull-requests should be based
 on the master branch.
 
-**FIXME:** Document mailing list!
+## Mailing list
+
+There is a low traffic developer mailing list available, see
+<https://lists.dcache.org/sympa/info/endit-dev> to subscribe.
 
 ## License
 
@@ -287,7 +283,6 @@ AGPL-3.0, see [LICENSE](LICENSE.txt)
 ## Versioning
 
 [Semantic Versioning 2.0.0](https://semver.org/)
-
 
 ## Contributors
 
