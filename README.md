@@ -185,6 +185,14 @@ v2, note that:
   1 million requests on a single tape pool with
   [modest hardware](#development-performance-tests), central
   dCache resources on your site might well limit this number.
+  - The dCache default restore limit is unlimited, verify using the
+    `\sp info` admin command.
+- Enable continuous flushing (aka open mode) to not have dCache wait for
+  ongoing flushes before submitting any new ones. This is done per
+  storage class, and it will silently use the default if you get the
+  name wrong.
+  - `queue define class osm TEMPLATE:GROUP -expire=1 -pending=1 -total=1 -open`
+
 
 There are two flavors of the ENDIT provider: The polling provider and
 the watching provider.
@@ -420,6 +428,256 @@ integration with the Tape guy storage system.
 This is a site-specific integration with the local storage system.
 
 **FIXME:** Info/link?
+
+# Deployment example
+
+This is an example of what we see as a typical simple deployment of this
+[dCache] ENDIT Provider together with [ENDIT daemons] as an integration
+to an already existing IBM Storage Protect system equipped with a tape
+library for mass storage.
+
+## Assumptions
+
+- A set of dCache disk pools to handle incoming data that is to be
+  flushed to tape, we assume data bursts with a higher bandwidth than the
+  number of allocated tape drives allow.
+- A set of dCache disk pools to cache outgoing data that is to be
+  staged from tape, we assume slow clients that will access data over a
+  longer time period.
+  - These pools can be shared with other use as long as the data intended
+    for tape is tagged with a dedicated storage class.
+- Two dedicated tape pools, one for write/flush and one for read/stage.
+
+## Overview
+
+- Decide names for all things, this example uses:
+  - Pool names:
+    - Tape write pool: `tape_w01`
+    - Tape read pool: `tape_r01`
+    - Ingest disk pools: `ingest_01` and `ingest_02`
+    - Cache disk pools: `cache_01` and `cache_02`
+  - Pool storage mountpoint:
+    - One pool per host, same filesystem/mountpoint on all: `/srv/pool`
+  - Pool groups:
+    - Tape write pools: `tape_write`
+    - Tape read pools: `tape_read`
+    - Ingest disk pools: `ingest_disk`
+    - Cache disk pools: `cache_disk`
+  - Storage class: `myproj:tape`
+    - StoreName: `myproj`
+    - sGroup: `tape`
+  - HSM instance name: `mytape`
+  - Dedicated directory in dCache for direct-to-tape data: `/tape`
+- Create dCache storage pools on the tape pools, leaving some space for
+  the [ENDIT daemons].
+- Create dCache storage pools on ingest and cache disk pools.
+- Install and deploy [ENDIT daemons] on tape pools.
+- Install and configure this [dCache] ENDIT provider on tape pools
+- Ensure cleaner-hsm cell is enabled
+- Define dCache poolgroups for tape read and write pools.
+- Define dCache poolgroups for ingest and stage cache disk pools.
+  - These can be co-located with existing pools. Ingest pools should
+    not have other data with same storage class.
+- Define link groups for tape data
+- Define migration jobs for moving tape data
+- Create a dedicated directory for direct-to-tape data
+
+## Creating dCache storage pools on tape pools
+
+We need to define the dCache pools smaller than the available storage
+space in order to reserve space for the [ENDIT demons] to do their work.
+
+This example assumes separate hosts with a dedicated file system on a
+single 4 TB NVMe device, and the 4000 GB size in power-of-10 units is
+actually 3725 GiB in power-of-2 units. The XFS file system is chosen,
+and after `mkfs.xfs` and mounting the file system `df -BG /srv/pool`
+reports 3600 GiB free.  We don't want to fill the file system more than
+98% full, which leaves 3528 GiB that can be used. We also want to
+reserve at least 100 GiB for the [ENDIT daemons] `retriever_buffersize`.
+Based on this, we choose 3400 GiB as the dCache pool size.
+
+Create the dCache tape write pool, run on the write pool host:
+
+    dcache pool create --size=3400G /srv/pool/dcache tape_w01 tape_w01_Domain
+
+Create the dCache tape read pool, run on the read pool host:
+
+    dcache pool create --size=3400G /srv/pool/dcache tape_r01 tape_r01_Domain
+
+## Creating dCache storage pools on ingest and cache disk pools
+
+This example assumes dedicated hosts with a dedicated file system on a
+12 HDD hardware RAID6 using 256 kiB strip size.
+
+The file system is created with:
+
+    mkfs.xfs -d -d su=256k,sw=10 -L pool /dev/sdX
+
+And mounted using the `LABEL=pool` syntax and not the device
+name with the following `/etc/fstab` entry:
+
+    LABEL=pool /srv/pool xfs rw,swalloc,largeio
+
+We use the `swalloc` and `largeio` XFS mount options to favor a
+large-file workload as this is the kind of files we expect to be stored
+on tape.
+
+After mounting the `df -BG /srv/pool` command reports 74000 GiB free. We
+don't want to fill the file system more than 98% full, this leaves max
+72520 GiB available for the dCache pool.
+
+Create the dCache pool using unique names based on the host as
+appropriate:
+
+    dcache pool create --size=72500G /srv/pool/dCache ingest_$(hostname -s) ingest_$(hostname -s)_Domain
+
+    dcache pool create --size=72500G /srv/pool/dCache cache_$(hostname -s) cache_$(hostname -s)_Domain
+
+## Install and deploy ENDIT daemons
+
+See the [ENDIT daemons] README for installation and deployment
+instructions. You will need to interact with your IBM Storage Protect
+administrator in order to set up a suitable storage hierarchy with
+dedicated nodes for this. Remember to set up daily generation of tape
+hint files.
+
+## Install and configure the ENDIT dCache provider
+
+See earlier in this README for installation instructions.
+
+To create HSM instances and tune the storage queue class to use open
+mode (ie continuous flushing):
+
+```
+\s tape_w01 hsm create osm mytape endit-watching -directory=/srv/pool
+\s tape_w01 queue define class osm myproj:tape -expire=1 -pending=1 -total=1 -open
+\s tape_w01 save
+
+\s tape_r01 hsm create osm mytape endit-watching -directory=/srv/pool
+\s tape_r01 queue define class osm myproj:tape -expire=1 -pending=1 -total=1 -open
+\s tape_r01 save
+```
+
+## Ensure cleaner-hsm cell is enabled
+
+In order for deletes of files migrated to tape to be actually deleted on
+the tape/hsm instance the `cleaner-hsm` cell needs to be enabled in the
+head node dCache configuration. It is usually placed in the same domain
+as the `cleaner-disk` cell in the dCache pool layout file.
+
+We recommend to increase the deletion batch size from the default 100 to
+better handle deletions of many files, add to your layout file:
+
+cleaner-hsm.limits.batch-size=1000
+
+## Define dCache poolgroups for tape read and write pools
+
+We want to define poolgroups for the tape read and write pools to make
+definitions of migration jobs easier, and also to ease management:
+
+```
+\sp psu create pgroup tape_read
+\sp psu addto pgroup tape_read tape_r01
+
+\sp psu create pgroup tape_write
+\sp psu addto pgroup tape_write tape_w01
+```
+
+## Define dCache poolgroups for ingest and stage cache disk pools
+
+Even though these can be co-located with existing pools we want
+dedicated poolgroups to reduce confusion and ease management.
+
+It should be noted that ingest pools should not have other data with the
+same storage class.
+
+```
+\sp psu create pgroup ingest_disk
+\sp psu addto pgroup ingest_disk ingest_01
+\sp psu addto pgroup ingest_disk ingest_02
+
+\sp psu create pgroup cache_disk
+\sp psu addto pgroup cache_disk cache_01
+\sp psu addto pgroup cache_disk cache_02
+```
+
+## Define link groups for tape data
+
+In order to to steer read and write access for tape data to the
+correct pool groups we need to define a number of link groups. In order
+to keep the example as simple as possible we use the default catch-all
+units for protocol, storage class and network.
+
+To have incoming data land on the `ingest_disk` pools:
+
+```
+\sp psu create link ingest-link any-protocol any-store world-net
+\sp psu set link ingest-link -readpref=0 -writepref=100 -cachepref=0 -p2ppref=-1
+\sp psu addto link ingest-link ingest_disk
+```
+
+To have the `cache_disk` pools be preferred for clients reading data and
+peer-to-peer (p2p) copies from the tape read pool:
+
+```
+\sp psu create link read-link any-protocol any-store world-net
+\sp psu set link read-link -readpref=100 -writepref=0 -cachepref=0 -p2ppref=100
+\sp psu addto link read-link cache_disk
+```
+
+To allow the tape read pools to stage data when a client tries to
+transfer a file on tape:
+
+```
+\sp psu create link stage-link any-protocol any-store world-net
+\sp psu set link stage-link -readpref=0 -writepref=0 -cachepref=100 -p2ppref=0
+\sp psu addto link stage-link tape_read
+```
+
+## Define migration jobs for moving tape data
+
+Migration jobs are needed to move incoming data from the `ingest_disk`
+pools to the `tape_write` pool, and to move staged data from the
+`tape_read` pool to the `cache_disk` pools.
+
+To move incoming data:
+
+```
+\s */ingest_disk migration move -id=ingest_move -permanent -concurrency=2 -storage=myproj:tape -smode=cached -target=pgroup tape_write
+```
+
+To move staged data:
+
+```
+\s */tape_read migration move -id=read_cache -permanent -concurrency=4 -select=random -storage=myproj:tape -target=pgroup cache_disk
+```
+
+Save the pool layout file to have a text backup of each pool setup:
+
+```
+\s */default save
+```
+
+
+## Create a dedicated directory for direct-to-tape data
+
+Having a dedicated directory for direct-to-tape data is the easiest way
+to store data onto tape.
+
+Using the `chimera` dCache command line utility is the most portable way
+of doing this, but other methods are also available.
+
+On a host set up so the `chimera` utility works, usually a head node:
+
+```
+chimera mkdir /tape
+chimera ls /
+chimera writetag /tape OSMTemplate "StoreName myproj"
+chimera writetag /tape sGroup "tape"
+chimera lstag /tape
+chimera readtag /tape OSMTemplate
+chimera readtag /tape sGroup
+```
 
 [dCache]: http://www.dcache.org/
 [ENDIT daemons]:  https://github.com/neicnordic/endit
