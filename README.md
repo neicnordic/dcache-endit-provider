@@ -568,7 +568,9 @@ as the `cleaner-disk` cell in the dCache pool layout file.
 We recommend to increase the deletion batch size from the default 100 to
 better handle deletions of many files, add to your layout file:
 
+```
 cleaner-hsm.limits.batch-size=1000
+```
 
 ## Define dCache poolgroups for tape read and write pools
 
