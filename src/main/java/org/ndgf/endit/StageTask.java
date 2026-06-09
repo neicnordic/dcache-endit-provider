@@ -119,7 +119,7 @@ class StageTask implements PollingStageTask<Boolean>
             }
             LOGGER.debug("StageTask start: id {}: size {}", id, size);
             LOGGER.debug("StageTask start: id {}: last modified {}", id, flastmod/1000);
-            if(flastmod < System.currentTimeMillis() + START_FOUND_GRACE_PERIOD) {
+            if(flastmod + START_FOUND_GRACE_PERIOD > System.currentTimeMillis()) {
                 // If inFile has been modified within START_FOUND_GRACE_PERIOD we consider this file to be
                 // in progress and treat the request as being processed by the integration. This can happen when
                 // a request has been cancelled and then resubmitted, since we don't enforce the integration to process
