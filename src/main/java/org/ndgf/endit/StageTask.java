@@ -47,6 +47,8 @@ class StageTask implements PollingStageTask<Boolean>
 {
     public static final int ERROR_GRACE_PERIOD = 1000;
 
+    public static final int START_FOUND_GRACE_PERIOD = 4*60*60*1000; // milliseconds
+
     private static final int PID = CLibrary.INSTANCE.getpid();
 
     private final static Logger LOGGER = LoggerFactory.getLogger(StageTask.class);
@@ -109,7 +111,24 @@ class StageTask implements PollingStageTask<Boolean>
 
         if (Files.isRegularFile(inFile)) {
             LOGGER.debug("StageTask start: id {}: found {}", id, inFile);
-            return true;
+            long fsize = Files.size(inFile);
+            long flastmod = Files.getLastModifiedTime(inFile).toMillis();
+            if(fsize == size) {
+                LOGGER.debug("StageTask start: id {}: size {} is final size", id, fsize);
+                return true;
+            }
+            LOGGER.debug("StageTask start: id {}: size {}", id, size);
+            LOGGER.debug("StageTask start: id {}: last modified {}", id, flastmod/1000);
+            if(flastmod < System.currentTimeMillis() + START_FOUND_GRACE_PERIOD) {
+                // If inFile has been modified within START_FOUND_GRACE_PERIOD we consider this file to be
+                // in progress and treat the request as being processed by the integration. This can happen when
+                // a request has been cancelled and then resubmitted, since we don't enforce the integration to process
+                // cancellations.
+                LOGGER.debug("StageTask start: id {}: File modified within {} seconds", id, START_FOUND_GRACE_PERIOD/1000);
+                return true;
+            }
+            LOGGER.debug("StageTask start: id {}: Deleting stale file {}", id, inFile);
+            Files.deleteIfExists(inFile);
         }
 
         JsonObject jsObj = new JsonObject();
