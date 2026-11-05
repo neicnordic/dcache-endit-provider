@@ -58,8 +58,8 @@ class FlushTask implements PollingTask<Set<URI>>
     private final long size;
     private final String storageClass;
     private final String path;
-    
     private final Set<Checksum> checksums;
+    private final String archiveMetadata;
 
     private final static Logger LOGGER = LoggerFactory.getLogger(FlushTask.class);
 
@@ -76,6 +76,7 @@ class FlushTask implements PollingTask<Set<URI>>
         storageClass =request.getFileAttributes().getStorageClass();
         path = request.getFileAttributes().getStorageInfo().getMap().get("path");
         checksums = request.getFileAttributes().getChecksums();
+	archiveMetadata = request.getFileAttributes().getStorageInfo().getKey("archive_metadata");
     }
 
     @Override
@@ -109,6 +110,10 @@ class FlushTask implements PollingTask<Set<URI>>
         jsObj.addProperty("path", path);
         jsObj.addProperty("checksumType", checksumType);
         jsObj.addProperty("checksumValue", checksumValue);
+	if(archiveMetadata != null) {
+		jsObj.addProperty("archive_metadata", archiveMetadata);
+	}
+
 
         /* Create the file and rename it in place to avoid consumers
          * getting a 0-byte or half-written file.
